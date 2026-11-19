@@ -16,7 +16,7 @@ export const auth = betterAuth({
                     additionalFields: {
                               // "customer" or "owner", chosen with the buttons in the Sign Up form.
                               role: {
-                                        type: "string",
+                                        type: ['customer', 'owner', 'admin'],
                                         required: true,
                                         defaultValue: "customer",
                                         input: true,

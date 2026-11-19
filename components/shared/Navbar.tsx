@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Cog, Menu, Moon, Search, Sun, User, UserPlus, Wrench } from "lucide-react"
+import { Menu, Moon, Search, Sun, User, UserPlus } from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -15,6 +15,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import { Logo } from "@/components/shared/Logo"
 import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
 
@@ -28,21 +29,6 @@ const navLinks: NavLink[] = [
 
 /** Dark text is forced everywhere: the navbar always sits on the yellow brand background. */
 const onBrand = "text-neutral-900 hover:bg-black/5"
-
-function Logo() {
-  return (
-    <Link href="/" className="flex shrink-0 items-center gap-2">
-      <span className="relative flex size-9 items-center justify-center">
-        <Cog className="size-9 text-red-600" />
-        <Wrench className="absolute size-4 text-neutral-900" />
-      </span>
-      <span className="text-xl font-bold tracking-tight">
-        <span className="text-red-700">Rent</span>{" "}
-        <span className="text-neutral-900">Gear</span>
-      </span>
-    </Link>
-  )
-}
 
 function ThemeToggle() {
   const { setTheme } = useTheme()
@@ -109,7 +95,7 @@ function MobileMenu() {
           <DrawerClose
             nativeButton={false}
             render={
-              <Link href="/login" className={buttonVariants({ variant: "outline" })} />
+              <Link href="/sign-in" className={buttonVariants({ variant: "outline" })} />
             }
           >
             <User className="size-4" />
@@ -117,7 +103,7 @@ function MobileMenu() {
           </DrawerClose>
           <DrawerClose
             nativeButton={false}
-            render={<Link href="/signup" className={buttonVariants({ variant: "default" })} />}
+            render={<Link href="/sign-up" className={buttonVariants({ variant: "default" })} />}
           >
             <UserPlus className="size-4" />
             Sign Up
@@ -161,7 +147,7 @@ export function Navbar() {
           </Button>
 
           <Link
-            href="/login"
+            href="/sign-in"
             className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
           >
             <User className="size-4" />
@@ -169,7 +155,7 @@ export function Navbar() {
           </Link>
 
           <Link
-            href="/signup"
+            href="/sign-up"
             className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
           >
             <UserPlus className="size-4" />

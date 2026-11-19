@@ -43,3 +43,32 @@ export type SearchFieldProps = {
 export type SearchBarProps = {
   cta: string
 }
+
+/* ---------- Authentication forms ---------- */
+
+/** Whether a user signs up to rent equipment (customer) or list it (owner). */
+export type UserRole = "customer" | "owner"
+
+/** Values collected by the Sign In form. */
+export type SignInFormValues = {
+  email: string
+  password: string
+}
+
+/** Values collected by the Sign Up form. */
+export type SignUpFormValues = {
+  name: string
+  email: string
+  photo: string
+  password: string
+}
+
+/** Validation message for one field. An empty object means "no errors". */
+export type FormErrors<T> = Partial<Record<keyof T, string>>
+
+/** Result of checking the three Sign Up password rules. */
+export type PasswordCheck = {
+  hasUppercase: boolean
+  hasLowercase: boolean
+  hasMinLength: boolean
+}

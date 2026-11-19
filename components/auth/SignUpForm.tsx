@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import type { FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 import { Check, Circle, Store, User } from "lucide-react"
@@ -24,6 +25,8 @@ const roleOptions: { value: UserRole; label: string; icon: LucideIcon }[] = [
 ]
 
 export function SignUpForm() {
+  const router = useRouter()
+
   const [values, setValues] = useState<SignUpFormValues>({
     name: "",
     email: "",
@@ -57,15 +60,14 @@ export function SignUpForm() {
     }
 
     // Send the whole form to better-auth, including the chosen role.
-    const { data,error } = await authClient.signUp.email({
+    const { error } = await authClient.signUp.email({
       name: values.name as string,
       email: values.email,
       password: values.password,
       image: values.photo,
+      callbackURL: "/",
       role,
-      callbackURL:'/'
     })
-     
 
     if (error) {
       toast.add({
@@ -76,13 +78,14 @@ export function SignUpForm() {
       return
     }
 
-    console.log("Sign up form data:", { ...values, role })
-
     toast.add({
       type: "success",
       title: "Account created",
       description: "Welcome to Rent Gear!",
     })
+
+    router.push("/")
+    router.refresh()
   }
 
   function handleGoogle() {
@@ -121,7 +124,7 @@ export function SignUpForm() {
                 className={cn(
                   "h-10 gap-2 border-white/10 bg-[#44342d] text-white hover:bg-[#54423a] hover:text-white dark:border-white/10 dark:bg-[#44342d] dark:hover:bg-[#54423a]",
                   selected &&
-                    "border-brand bg-brand text-neutral-900 hover:bg-brand-hover hover:text-neutral-900 dark:border-brand dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
+                  "border-brand bg-brand text-neutral-900 hover:bg-brand-hover hover:text-neutral-900 dark:border-brand dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
                 )}
               >
                 <Icon className="size-4" />

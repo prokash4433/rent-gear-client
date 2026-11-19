@@ -2,10 +2,9 @@
 
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Menu, Moon, Search, Sun, User, UserPlus } from "lucide-react"
+import { LogOut, Menu, Moon, Search, Sun, User, UserPlus } from "lucide-react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   Drawer,
   DrawerClose,
@@ -18,6 +17,7 @@ import {
 import { Logo } from "@/components/shared/Logo"
 import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
+import { useSession, signOut } from "@/lib/auth-client"
 
 const navLinks: NavLink[] = [
   { label: "Home", href: "/" },
@@ -115,6 +115,12 @@ function MobileMenu() {
 }
 
 export function Navbar() {
+  const { data: session } = useSession()
+
+  const handleSignOut = async () => {
+    await signOut()
+  }
+
   return (
     <header className="bg-brand">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
@@ -140,27 +146,49 @@ export function Navbar() {
             <ThemeToggle />
           </div>
 
-          <Separator orientation="vertical" className="mx-1 hidden h-5 bg-black/20 sm:block" />
+          {/* Divider: plain div so it stays vertically centered */}
+          <div
+            aria-hidden="true"
+            className="mx-1 hidden h-5 w-px shrink-0 self-center bg-black/20 sm:block"
+          />
 
           <Button variant="ghost" size="icon" aria-label="Search" className={onBrand}>
             <Search className="size-4" />
           </Button>
 
-          <Link
-            href="/sign-in"
-            className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
-          >
-            <User className="size-4" />
-            Log in
-          </Link>
+          {session?.user ? (
+            <>
+              <span className="text-[#EDEDEF]">Welcome, {session.user.name}!</span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="hidden cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors md:inline-flex"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border">
+                  <LogOut className="size-4 text-[#e60023]" strokeWidth={2} />
+                </span>
+                <span className="text-sm font-bold text-[#e60023]">Logout</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
+              >
+                <User className="size-4" />
+                Log in
+              </Link>
 
-          <Link
-            href="/sign-up"
-            className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
-          >
-            <UserPlus className="size-4" />
-            Sign Up
-          </Link>
+              <Link
+                href="/sign-up"
+                className={cn(buttonVariants({ variant: "ghost" }), "hidden md:inline-flex", onBrand)}
+              >
+                <UserPlus className="size-4" />
+                Sign Up
+              </Link>
+            </>
+          )}
 
           <MobileMenu />
         </div>

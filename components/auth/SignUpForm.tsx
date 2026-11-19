@@ -57,7 +57,7 @@ export function SignUpForm() {
     }
 
     // Send the whole form to better-auth, including the chosen role.
-    const { error } = await authClient.signUp.email({
+    const { data,error } = await authClient.signUp.email({
       name: values.name as string,
       email: values.email,
       password: values.password,
@@ -65,6 +65,7 @@ export function SignUpForm() {
       role,
       callbackURL:'/'
     })
+     
 
     if (error) {
       toast.add({

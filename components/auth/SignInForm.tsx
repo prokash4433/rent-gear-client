@@ -11,6 +11,7 @@ import { FormField } from "@/components/auth/FormField"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import type { FormErrors, SignInFormValues } from "@/lib/types"
 import { validateSignIn } from "@/lib/validation"
+import { authClient } from "@/lib/auth-client"
 
 export function SignInForm() {
   const [values, setValues] = useState<SignInFormValues>({
@@ -25,7 +26,7 @@ export function SignInForm() {
     setErrors({ ...errors, [field]: undefined })
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const nextErrors = validateSignIn(values)
@@ -39,9 +40,15 @@ export function SignInForm() {
       })
       return
     }
+    const { data, error } = await authClient.signIn.email({
+      email: values.email, 
+      password: values.password,  
+      rememberMe: true,  
+      callbackURL: '/',  
+    });
 
-    // Authentication will be added later — for now we only collect the data.
-    console.log("Sign in form data:", values)
+    
+    console.log("Sign in form data:", data, error)
 
     toast.add({
       type: "success",

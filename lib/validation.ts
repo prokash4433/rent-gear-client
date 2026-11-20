@@ -1,4 +1,5 @@
 import type {
+  EquipmentFormValues,
   FormErrors,
   PasswordCheck,
   SignInFormValues,
@@ -68,6 +69,47 @@ export function validateSignUp(
       errors.password =
         "Password needs an uppercase letter, a lowercase letter and at least 6 characters"
     }
+  }
+
+  return errors
+}
+
+/** Returns the error messages for the Add Equipment form (empty object = valid). */
+export function validateEquipment(
+  values: EquipmentFormValues
+): FormErrors<EquipmentFormValues> {
+  const errors: FormErrors<EquipmentFormValues> = {}
+
+  if (!values.name.trim()) {
+    errors.name = "Equipment name is required"
+  }
+
+  if (!values.category) {
+    errors.category = "Category is required"
+  }
+
+  if (!values.description.trim()) {
+    errors.description = "Description is required"
+  }
+
+  if (!values.rentalPrice.trim()) {
+    errors.rentalPrice = "Rental price is required"
+  } else if (Number.isNaN(Number(values.rentalPrice)) || Number(values.rentalPrice) <= 0) {
+    errors.rentalPrice = "Enter a price greater than 0"
+  }
+
+  if (!values.rentalType) {
+    errors.rentalType = "Rental type is required"
+  }
+
+  if (!values.quantity.trim()) {
+    errors.quantity = "Quantity is required"
+  } else if (Number.isNaN(Number(values.quantity)) || Number(values.quantity) < 1) {
+    errors.quantity = "Enter at least 1"
+  }
+
+  if (!values.location.trim()) {
+    errors.location = "Location is required"
   }
 
   return errors

@@ -78,6 +78,31 @@ export type SignUpFormValues = {
   password: string
 }
 
+/* ---------- Owner: Add Equipment form ---------- */
+
+/** Values collected by the owner's Add Equipment form. */
+export type EquipmentFormValues = {
+  /** Equipment Name */
+  name: string
+  /** Category (value from the category dropdown) */
+  category: string
+  description: string
+  /** Kept as a string because that is what a text input holds. */
+  rentalPrice: string
+  /** Rental Type (Hourly / Daily / Weekly / Monthly) */
+  rentalType: string
+  /** Available Quantity, also a string for the same reason. */
+  quantity: string
+  brand: string
+  model: string
+  /** Condition (Excellent / Good / Fair) */
+  condition: string
+  location: string
+  /** Image URLs typed in the textarea, one per line. */
+  imageUrls: string
+  terms: string
+}
+
 /** Validation message for one field. An empty object means "no errors". */
 export type FormErrors<T> = Partial<Record<keyof T, string>>
 

@@ -19,13 +19,7 @@ import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
 import { useSession, signOut } from "@/lib/auth-client"
 
-const navLinks: NavLink[] = [
-  { label: "Home", href: "/" },
-  { label: "All Equipment", href: "/equipment" },
-  { label: "About Us", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
-  { label: "How It Works", href: "/how-it-works" },
-]
+
 
 /** Dark text is forced everywhere: the navbar always sits on the yellow brand background. */
 const onBrand = "text-neutral-900 hover:bg-black/5"
@@ -57,7 +51,7 @@ function ThemeToggle() {
   )
 }
 
-function MobileMenu() {
+function MobileMenu({ navLinks }: { navLinks: NavLink[] }) {
   return (
     <Drawer>
       <DrawerTrigger
@@ -117,12 +111,21 @@ function MobileMenu() {
 export function Navbar() {
   const { data: session } = useSession()
 
+  const navLinks: NavLink[] = [
+    { label: "Home", href: "/" },
+    { label: "All Equipment", href: "/equipment" },
+    { label: "About Us", href: "/about" },
+    { label: "Contact Us", href: "/contact" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "Dashboard", href: `/dashboard/${session?.user.role || 'customer'}` },
+  ]
+
   const handleSignOut = async () => {
     await signOut()
   }
 
   return (
-    <header className="bg-brand">
+    <header className="sticky top-0 z-50 bg-brand">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6">
         <Logo />
 
@@ -190,7 +193,7 @@ export function Navbar() {
             </>
           )}
 
-          <MobileMenu />
+          <MobileMenu navLinks={navLinks} />
         </div>
       </div>
     </header>

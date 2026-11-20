@@ -46,8 +46,23 @@ export type SearchBarProps = {
 
 /* ---------- Authentication forms ---------- */
 
-/** Whether a user signs up to rent equipment (customer) or list it (owner). */
-export type UserRole = "customer" | "owner"
+/** Whether a user signs up to rent equipment (customer), list it (owner), or administers the site (admin). */
+export type UserRole = "customer" | "owner" | "admin"
+
+/* ---------- Dashboard sidebar ---------- */
+
+/** One item in the dashboard sidebar menu. */
+export type DashboardMenuItem = {
+  /** Label shown in the sidebar. */
+  name: string
+  /** Where the item links to. */
+  url: string
+  /** Lucide icon shown next to the label. */
+  icon: LucideIcon
+}
+
+/** Sidebar menu items grouped by the user's role. */
+export type MenuItemsByRole = Record<UserRole, DashboardMenuItem[]>
 
 /** Values collected by the Sign In form. */
 export type SignInFormValues = {

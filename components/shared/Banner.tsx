@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   ArrowRight,
   CalendarDays,
@@ -27,6 +28,10 @@ import type {
   SearchBarProps,
   SearchFieldProps,
 } from "@/lib/types"
+
+// TODO: navbar-er all-equipment link ar dashboard link ekhane boshao.
+const ALL_EQUIPMENT_HREF = "/all-equipment"
+const DASHBOARD_HREF = "/dashboard"
 
 const categories: CategoryOption[] = [
   { value: "agriculture", label: "Agriculture Equipment" },
@@ -67,15 +72,14 @@ function Field({ icon: Icon, label, children }: SearchFieldProps) {
 
 function SearchBar({ cta }: SearchBarProps) {
   return (
-    // The card always stays white and light, even in dark mode,
-    // because it sits on the yellow brand background.
-    <div className="rounded-2xl bg-white p-4 text-neutral-900 shadow-xl ring-1 ring-black/5 [color-scheme:light] sm:p-5">
+    // The card is a light, see-through glass panel so the image behind stays visible.
+    <div className="mt-10 rounded-2xl bg-white/10 p-4 text-neutral-900 shadow-xl ring-1 ring-white/30 [color-scheme:light] sm:p-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end lg:gap-3">
         {/* SelectTrigger's built-in height is variant-prefixed, so the same
-            variant is repeated here to override it. */}
+        variant is repeated here to override it. */}
         <Field icon={LayoutGrid} label="Category">
           <Select>
-            <SelectTrigger className="h-11 w-full border-neutral-200 bg-white placeholder:text-neutral-500 data-placeholder:text-neutral-500 data-[size=default]:h-11 dark:bg-white [&_svg]:text-neutral-500">
+            <SelectTrigger className="h-11 w-full border-white/40 bg-white/25 text-neutral-900 placeholder:text-neutral-700 data-placeholder:text-neutral-700 data-[size=default]:h-11 dark:bg-white/25 [&_svg]:text-neutral-700">
               <SelectValue placeholder="Search ..." />
             </SelectTrigger>
             <SelectContent>
@@ -90,7 +94,7 @@ function SearchBar({ cta }: SearchBarProps) {
 
         <Field icon={MapPin} label="Location">
           <Select items={locations} defaultValue="bd">
-            <SelectTrigger className="h-11 w-full border-neutral-200 bg-white placeholder:text-neutral-500 data-placeholder:text-neutral-500 data-[size=default]:h-11 dark:bg-white [&_svg]:text-neutral-500">
+            <SelectTrigger className="h-11 w-full border-white/40 bg-white/25 text-neutral-900 placeholder:text-neutral-700 data-placeholder:text-neutral-700 data-[size=default]:h-11 dark:bg-white/25 [&_svg]:text-neutral-700">
               <span className="flex items-center gap-1.5">
                 <BangladeshFlag />
                 <SelectValue placeholder="Select Location" />
@@ -112,14 +116,14 @@ function SearchBar({ cta }: SearchBarProps) {
         <Field icon={CalendarDays} label="Start Date">
           <Input
             type="date"
-            className="h-11 border-neutral-200 bg-white placeholder:text-neutral-500 dark:bg-white"
+            className="h-11 border-white/40 bg-white/25 text-neutral-900 placeholder:text-neutral-700 dark:bg-white/25"
           />
         </Field>
 
         <Field icon={CalendarDays} label="End Date">
           <Input
             type="date"
-            className="h-11 border-neutral-200 bg-white placeholder:text-neutral-500 dark:bg-white"
+            className="h-11 border-white/40 bg-white/25 text-neutral-900 placeholder:text-neutral-700 dark:bg-white/25"
           />
         </Field>
 
@@ -132,19 +136,34 @@ function SearchBar({ cta }: SearchBarProps) {
   )
 }
 
-const tabs: BannerTab[] = [
-  { value: "rent", label: "Rent", icon: LayoutGrid, cta: "Let's Rent" },
-  { value: "buy", label: "Buy", icon: ShoppingCart, cta: "Let's Buy" },
+const tabs: (BannerTab & { href: string })[] = [
+  {
+    value: "rent",
+    label: "Rent",
+    icon: LayoutGrid,
+    cta: "Let's Rent",
+    href: ALL_EQUIPMENT_HREF,
+  },
+  {
+    value: "buy",
+    label: "Buy",
+    icon: ShoppingCart,
+    cta: "Let's Buy",
+    href: DASHBOARD_HREF,
+  },
   {
     value: "parts",
     label: "Parts & Accessories",
     shortLabel: "Parts",
     icon: Package,
     cta: "Search Parts",
+    href: ALL_EQUIPMENT_HREF,
   },
 ]
 
 export function Banner() {
+  const router = useRouter()
+
   return (
     <section className="bg-brand">
       <div className="mx-auto w-full max-w-6xl px-4 pt-8 pb-14 text-center sm:px-6 sm:pt-12 sm:pb-20">
@@ -179,6 +198,7 @@ export function Banner() {
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
+                    onClick={() => router.push(tab.href)}
                     className="gap-1.5 rounded-lg px-2 text-[11px] font-semibold tracking-wide uppercase text-white/70 hover:bg-white/10 hover:text-white data-active:bg-white data-active:text-neutral-900 data-active:shadow-sm dark:data-active:bg-white dark:data-active:text-neutral-900 sm:px-3 sm:text-xs"
                   >
                     <tab.icon className="size-4" />

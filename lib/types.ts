@@ -111,12 +111,44 @@ export type EquipmentFormValues = {
 export type EquipmentPayload = Omit<EquipmentFormValues, "imageUrls"> & {
   imageUrls: string[]
   photos: string[]
+  /** Email of the owner who published the listing (from the session). */
+  ownerEmail: string
 }
 
 /** The response MongoDB sends back after inserting one document. */
 export type CreateEquipmentResult = {
   acknowledged: boolean
   insertedId: string
+}
+
+/* ---------- Owner: All Equipment table ---------- */
+
+/** Admin approval status of a listing. New listings stay "pending". */
+export type EquipmentStatus = "pending" | "approved" | "rejected"
+
+/**
+ * One row of the owner's All Equipment table.
+ * Same fields as the Add Equipment form, plus the id, the approval status
+ * (defaults to "pending"), and the owner who listed it.
+ */
+export type EquipmentListItem = EquipmentFormValues & {
+  id: string
+  /** Not set yet on new listings -> displayed as "pending". */
+  status?: EquipmentStatus
+  ownerEmail: string
+}
+
+/**
+ * One document as GET /equipments returns it: an EquipmentPayload plus the
+ * MongoDB `_id`. Everything is optional because documents created before a
+ * field existed (ownerEmail, status, ...) do not have it.
+ */
+export type EquipmentDocument = Omit<Partial<EquipmentPayload>, "imageUrls"> & {
+  _id: string
+  /** The form kept one URL per line; the API sends an array or a string. */
+  imageUrls?: string[] | string
+  /** Admin approval status; missing on older documents. */
+  status?: EquipmentStatus
 }
 
 /** Validation message for one field. An empty object means "no errors". */

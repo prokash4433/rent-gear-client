@@ -2,17 +2,10 @@
 
 import type { CreateEquipmentResult, EquipmentPayload } from "@/lib/types"
 
-// Our Express API (rent-gear-server). BASE_URL comes from .env — it is only
-// readable here because this file runs on the server ("use server").
-const BASE_URL = process.env.BASE_URL || "http://localhost:5000"
+ 
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
 
-/**
- * Creates one equipment listing by POSTing the form data to the API,
- * which saves it in the "equipments" collection of MongoDB.
- *
- * Returns MongoDB's insert result: { acknowledged, insertedId }.
- * Throws an error when the API cannot be reached or answers with a failure.
- */
+ 
 export const createEquipment = async (
   data: EquipmentPayload
 ): Promise<CreateEquipmentResult> => {
@@ -29,4 +22,11 @@ export const createEquipment = async (
   }
 
   return res.json()
+}
+
+export const deleteEquipment = async (equipmentId: string) =>{
+  const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`,{
+    method:'DELETE'
+  });
+  return res.json();
 }

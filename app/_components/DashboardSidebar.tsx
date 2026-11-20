@@ -13,6 +13,8 @@ import {
 import { useSession } from "@/lib/auth-client"
 import { usePathname } from "next/navigation"
 import {
+  BoxIcon,
+   
           CalendarCheck,
           ChartColumn,
           Heart,
@@ -39,6 +41,7 @@ const menuItemsByRole: MenuItemsByRole = {
           owner: [
                     { name: "Overview", url: "/dashboard/owner", icon: LayoutDashboard },
                     { name: "Add Equipment", url: "/dashboard/owner/add-equipment", icon: Plus },
+                   { name: "My Equipment", url: "/dashboard/owner/my-equipment", icon: BoxIcon},
                     { name: "My Rentals", url: "/dashboard/owner/my-rentals", icon: CalendarCheck },
                     { name: "Analytics", url: "/dashboard/owner/analytics", icon: ChartColumn },
                     { name: "Profile", url: "/dashboard/owner/profile", icon: User },

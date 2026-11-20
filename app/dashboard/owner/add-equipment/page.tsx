@@ -25,6 +25,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
 import { createEquipment } from "@/lib/actions/equipments"
+import { useSession } from "@/lib/auth-client"
 import type {
   CategoryOption,
   EquipmentFormValues,
@@ -103,6 +104,8 @@ export default function AddEquipmentPage() {
   // so rapid double clicks are blocked too.
   const savingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // The signed-in owner — their email is saved with the listing.
+  const { data: session } = useSession()
 
   // Update one field and clear its error while the user types.
   function setField(field: keyof EquipmentFormValues, value: string) {
@@ -153,6 +156,8 @@ export default function AddEquipmentPage() {
         .map((url) => url.trim())
         .filter(Boolean),
       photos: photos.map((photo) => photo.name),
+      // Record who listed it, so the All Equipment table can filter by owner.
+      ownerEmail: session?.user?.email ?? "",
     }
 
     // Save it through our API action (POST -> MongoDB).

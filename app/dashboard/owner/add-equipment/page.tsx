@@ -24,9 +24,11 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
+import { createEquipment } from "@/lib/actions/equipments"
 import type {
   CategoryOption,
   EquipmentFormValues,
+  EquipmentPayload,
   FormErrors,
 } from "@/lib/types"
 import { validateEquipment } from "@/lib/validation"
@@ -95,6 +97,11 @@ export default function AddEquipmentPage() {
   const [errors, setErrors] = useState<FormErrors<EquipmentFormValues>>({})
   // The photos picked from the device (kept as File objects).
   const [photos, setPhotos] = useState<File[]>([])
+  // True while the form data is being sent to the API.
+  const [saving, setSaving] = useState(false)
+  // The ref updates instantly (state only updates after a re-render),
+  // so rapid double clicks are blocked too.
+  const savingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Update one field and clear its error while the user types.
@@ -118,8 +125,12 @@ export default function AddEquipmentPage() {
     setPhotos(photos.filter((_, i) => i !== index))
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    // Ignore extra clicks while a save is already on its way —
+    // otherwise the same listing gets inserted twice.
+    if (savingRef.current) return
 
     const nextErrors = validateEquipment(values)
     setErrors(nextErrors)
@@ -133,9 +144,8 @@ export default function AddEquipmentPage() {
       return
     }
 
-    // One object with everything the form collected — this is what would
-    // be sent to the backend when the API is ready.
-    const equipment = {
+    // One object with everything the form collected.
+    const equipment: EquipmentPayload = {
       ...values,
       // The textarea holds one URL per line -> turn it into an array.
       imageUrls: values.imageUrls
@@ -144,13 +154,43 @@ export default function AddEquipmentPage() {
         .filter(Boolean),
       photos: photos.map((photo) => photo.name),
     }
-    console.log("Add equipment form data:", equipment)
 
-    toast.add({
-      type: "success",
-      title: "Equipment published",
-      description: "Your listing has been collected (demo — not saved yet).",
-    })
+    // Save it through our API action (POST -> MongoDB).
+    savingRef.current = true
+    setSaving(true)
+    try {
+      // Send the data and wait for the API's response.
+      const result = await createEquipment(equipment)
+
+      // Acknowledge the response: the insert result carries the id
+      // MongoDB gave the new document.
+      const insertedId = result.insertedId
+      console.log("Equipment saved. acknowledged:", result.acknowledged, "insertedId:", insertedId)
+
+      toast.add({
+        type: "success",
+        title: "Equipment published",
+        description: `Saved to the database. insertedId: ${insertedId}`,
+      })
+
+      // Start fresh so the same listing cannot be published again.
+      setValues(initialValues)
+      setPhotos([])
+    } catch (error) {
+      console.error("Could not save equipment:", error)
+
+      toast.add({
+        type: "error",
+        title: "Could not save equipment",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
+      })
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
   }
 
   return (
@@ -412,9 +452,10 @@ export default function AddEquipmentPage() {
               </Button>
               <Button
                 type="submit"
+                disabled={saving}
                 className="bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover cursor-pointer"
               >
-                Publish Equipment
+                {saving ? "Publishing..." : "Publish Equipment"}
               </Button>
             </div>
           </form>

@@ -103,6 +103,22 @@ export type EquipmentFormValues = {
   terms: string
 }
 
+/**
+ * What the Add Equipment form sends to the API.
+ * Same as EquipmentFormValues, but the image URLs are already split into an
+ * array and the picked photo names are included.
+ */
+export type EquipmentPayload = Omit<EquipmentFormValues, "imageUrls"> & {
+  imageUrls: string[]
+  photos: string[]
+}
+
+/** The response MongoDB sends back after inserting one document. */
+export type CreateEquipmentResult = {
+  acknowledged: boolean
+  insertedId: string
+}
+
 /** Validation message for one field. An empty object means "no errors". */
 export type FormErrors<T> = Partial<Record<keyof T, string>>
 

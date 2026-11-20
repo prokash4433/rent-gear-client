@@ -44,6 +44,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import type { EquipmentListItem, EquipmentStatus } from "@/lib/types"
 import { DeleteEquipmentDialog } from "@/app/_components/DeleteEquipmentDialog"
+import UpdateEquipmentDialog from "@/app/_components/UpdateEquipmentDialog"
 
 const categoryLabels: Record<string, string> = {
           agriculture: "Agriculture Equipment",
@@ -310,15 +311,15 @@ export default function EquipmentList({
 
                                                                                                               <TableCell className="text-right">
                                                                                                                         <div className="flex flex-wrap items-center justify-end gap-1.5">
-                                                                                                                                  <Button
-                                                                                                                                            variant="outline"
-                                                                                                                                            size="sm"
-                                                                                                                                            onClick={() => openEdit(item)}
-                                                                                                                                  >
-                                                                                                                                            <Pencil />
-                                                                                                                                            Update
-                                                                                                                                  </Button>
-                                                                                                                                  <DeleteEquipmentDialog equipment={item} />
+                                                                                                              {/* <Button
+variant="outline"
+size="sm"
+onClick={() => openEdit(item)}>
+<Pencil />Update
+</Button> */}
+                                                                                                                                  <UpdateEquipmentDialog equipment={item} />
+
+<DeleteEquipmentDialog equipment={item} />
                                                                                                                                   <Button
                                                                                                                                             variant="outline"
                                                                                                                                             size="sm"
@@ -393,16 +394,16 @@ export default function EquipmentList({
                                                                                 )}
                                                                       </div>
 
-                                                                      <DialogFooter>
-                                                                                <DialogClose render={<Button variant="outline" type="button" />}>
-                                                                                          Cancel
-                                                                                </DialogClose>
-                                                                                <Button type="submit" className={brandButtonClass}>
-                                                                                          Save changes
-                                                                                </Button>
-                                                                      </DialogFooter>
+{/* <DialogFooter>
+<DialogClose render={<Button variant="outline" type="button" />}>
+Cancel
+</DialogClose>
+<Button type="submit" className={brandButtonClass}>
+Save changes
+ </Button>
+</DialogFooter> */}
                                                             </form>
-                                                  </DialogContent>
+</DialogContent>
                                         )}
                               </Dialog>
 

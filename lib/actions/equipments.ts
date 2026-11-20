@@ -26,7 +26,27 @@ export const createEquipment = async (
 
 export const deleteEquipment = async (equipmentId: string) =>{
   const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`,{
-    method:'DELETE'
+    method:'DELETE',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(deleteEquipment),
   });
   return res.json();
+}
+
+//Uodate Api
+export const updateEquipment = async (
+  equipmentId: string,
+  data: { rentalPrice: string; quantity: string }
+) => {
+  const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Update failed (${res.status})`)
+  }
+
+  return res.json()
 }

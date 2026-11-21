@@ -40,17 +40,16 @@ const BrowseEquipmentsPage = async ({
           return (
                     <div>
                               {/* ---------- Hero ---------- */}
-                              <section className="bg-brand">
-                                        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
-                                                  <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
-                                                            All Equipment
-                                                  </h1>
-                                                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-800 sm:text-base">
-                                                            Browse every listing in one place —
-                                                            search by name or location, filter by
-                                                            category, rental type, price and
-                                                            availability, then rent the gear you
-                                                            need.
+          <section className="bg-brand">
+          <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+          All Equipment
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-800 sm:text-base">
+          Browse every listing in one place —
+          search by name or location, filter by
+          category, rental type, price and
+          availability, then rent the gear you need.
                                                   </p>
                                         </div>
                               </section>
@@ -62,14 +61,12 @@ const BrowseEquipmentsPage = async ({
                                                   params={params}
                                         />
 
-                                        <div className="flex flex-col gap-6 lg:flex-row">
-                                                  <BrowseFilters params={params} />
+          <div className="flex flex-col gap-6 lg:flex-row">
+          <BrowseFilters params={params} />
 
-                                                  <div className="min-w-0 flex-1">
-                                                            {/* The key resets the client-side
-                                                                page back to 1 whenever the
-                                                                filters change. */}
-                                                            <EquipmentResults
+          <div className="min-w-0 flex-1">
+                                                             
+<EquipmentResults
                                                                       key={query.toString()}
                                                                       items={items}
                                                             />

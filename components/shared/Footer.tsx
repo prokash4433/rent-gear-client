@@ -14,7 +14,7 @@ const socialLinks = [
 ];
 
 const Footer = () => {
-          const handleSubscribe = (e) => {
+          const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
                     e.preventDefault();
                     alert("Thanks for subscribing!");
                     e.target.reset();

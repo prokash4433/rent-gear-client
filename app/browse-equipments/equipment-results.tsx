@@ -6,14 +6,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
-          Dialog,
-          DialogContent,
-          DialogDescription,
-          DialogFooter,
-          DialogHeader,
-          DialogTitle,
-} from "@/components/ui/dialog"
-import {
           Empty,
           EmptyContent,
           EmptyDescription,
@@ -24,27 +16,10 @@ import { toast } from "@/components/ui/toast"
 import { addFavourite, getFavourites, removeFavourite } from "@/lib/api/favourites"
 import { useSession } from "@/lib/auth-client"
 import type { EquipmentListItem } from "@/lib/types"
-import { categoryLabels, EquipmentCard, formatPrice } from "./equipment-card"
+import { EquipmentCard } from "./equipment-card"
 
 /** How many cards one page shows (matches "Showing 1-9 of 11"). */
 const pageSize = 9
-
-function DetailRow({
-          label,
-          value,
-          className,
-}: {
-          label: string
-          value: React.ReactNode
-          className?: string
-}) {
-          return (
-                    <div className={className}>
-                              <dt className="text-xs text-muted-foreground">{label}</dt>
-                              <dd className="text-sm">{value}</dd>
-                    </div>
-          )
-}
 
 export function EquipmentResults({
           items,
@@ -60,7 +35,6 @@ export function EquipmentResults({
 
           const [page, setPage] = useState(1)
           const [favouriteIds, setFavouriteIds] = useState<string[]>([])
-          const [viewItem, setViewItem] = useState<EquipmentListItem | null>(null)
 
           // The signed-in user's favourites, so the hearts start out filled.
           useEffect(() => {
@@ -167,7 +141,11 @@ export function EquipmentResults({
                                                                       item.id
                                                             )}
                                                             onToggleFavourite={toggleFavourite}
-                                                            onView={setViewItem}
+                                                            onView={(equipment) =>
+                                                                      router.push(
+                                                                                `/browse-equipments/${equipment.id}`
+                                                                      )
+                                                            }
                                                   />
                                         ))}
                               </div>
@@ -232,129 +210,6 @@ export function EquipmentResults({
                                                   </Button>
                                         </nav>
                               )}
-
-                              {/* ---------- View Details dialog ---------- */}
-                              <Dialog
-                                        open={viewItem !== null}
-                                        onOpenChange={(open) => {
-                                                  if (!open) setViewItem(null)
-                                        }}
-                              >
-                                        {viewItem && (
-                                                  <DialogContent className="sm:max-w-lg">
-                                                            <DialogHeader>
-                                                                      <DialogTitle>
-                                                                                {viewItem.name}
-                                                                      </DialogTitle>
-                                                                      <DialogDescription>
-                                                                                {categoryLabels[
-                                                                                          viewItem
-                                                                                                    .category
-                                                                                ] ??
-                                                                                          viewItem.category}{" "}
-                                                                                ·{" "}
-                                                                                {viewItem.location}
-                                                                      </DialogDescription>
-                                                            </DialogHeader>
-
-                                                            <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-                                                                      <DetailRow
-                                                                                label="Rental Price"
-                                                                                value={
-                                                                                          <>
-                                                                                                    <span className="font-semibold text-brand-hover">
-                                                                                                              ৳
-                                                                                                              {formatPrice(
-                                                                                                                        viewItem.rentalPrice
-                                                                                                              )}
-                                                                                                    </span>
-                                                                                                    <span className="text-muted-foreground">
-                                                                                                              {" "}
-                                                                                                              /{" "}
-                                                                                                              {viewItem.rentalType}
-                                                                                                    </span>
-                                                                                          </>
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Availability"
-                                                                                value={
-                                                                                          Number(
-                                                                                                    viewItem.quantity
-                                                                                          ) > 0 ? (
-                                                                                                    <span className="text-emerald-600 dark:text-emerald-400">
-                                                                                                              Available
-                                                                                                    </span>
-                                                                                          ) : (
-                                                                                                    <span className="text-destructive">
-                                                                                                              Unavailable
-                                                                                                    </span>
-                                                                                          )
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Location"
-                                                                                value={
-                                                                                          viewItem.location
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Category"
-                                                                                value={
-                                                                                          categoryLabels[
-                                                                                                    viewItem
-                                                                                                              .category
-                                                                                          ] ??
-                                                                                          viewItem.category
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Brand"
-                                                                                value={
-                                                                                          viewItem.brand ||
-                                                                                          "—"
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Model"
-                                                                                value={
-                                                                                          viewItem.model ||
-                                                                                          "—"
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Condition"
-                                                                                value={
-                                                                                          viewItem.condition ||
-                                                                                          "—"
-                                                                                }
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Available Quantity"
-                                                                                value={`${viewItem.quantity} units`}
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Description"
-                                                                                value={
-                                                                                          viewItem.description ||
-                                                                                          "—"
-                                                                                }
-                                                                                className="sm:col-span-2"
-                                                                      />
-                                                                      <DetailRow
-                                                                                label="Rental Terms"
-                                                                                value={
-                                                                                          viewItem.terms ||
-                                                                                          "—"
-                                                                                }
-                                                                                className="sm:col-span-2"
-                                                                      />
-                                                            </dl>
-
-                                                            <DialogFooter showCloseButton />
-                                                  </DialogContent>
-                                        )}
-                              </Dialog>
                     </div>
           )
 }

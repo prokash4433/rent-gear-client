@@ -24,10 +24,16 @@ export function formatPrice(price: string) {
 }
 
 /** The image is stored as an array or as one plain string. */
-function firstImage(item: EquipmentListItem): string {
-          const urls = item.imageUrls
+export function firstImageFrom(
+          urls: EquipmentListItem["imageUrls"] | string[] | undefined
+): string {
           if (Array.isArray(urls)) return urls[0] ?? ""
           return urls ?? ""
+}
+
+/** The image is stored as an array or as one plain string. */
+function firstImage(item: EquipmentListItem): string {
+          return firstImageFrom(item.imageUrls)
 }
 
 type EquipmentCardProps = {

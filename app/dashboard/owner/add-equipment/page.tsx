@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import type { DragEvent, FormEvent, ReactNode } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ArrowLeft, ImagePlus, Truck, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -51,6 +52,9 @@ const conditions = ["Excellent", "Good", "Fair"]
 /** How many photos one listing may have. */
 const maxPhotos = 6
 
+/** Jekhane publish-er por niye jabe. */
+const myEquipmentPath = "/dashboard/owner/my-equipment"
+
 /** The form starts out with the values shown in the reference design. */
 const initialValues: EquipmentFormValues = {
   name: "",
@@ -94,6 +98,7 @@ function Field({
 }
 
 export default function AddEquipmentPage() {
+  const router = useRouter()
   const [values, setValues] = useState<EquipmentFormValues>(initialValues)
   const [errors, setErrors] = useState<FormErrors<EquipmentFormValues>>({})
   // The photos picked from the device (kept as File objects).
@@ -129,7 +134,7 @@ export default function AddEquipmentPage() {
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault()
 
     // Ignore extra clicks while a save is already on its way —
     // otherwise the same listing gets inserted twice.
@@ -170,7 +175,12 @@ export default function AddEquipmentPage() {
       // Acknowledge the response: the insert result carries the id
       // MongoDB gave the new document.
       const insertedId = result.insertedId
-      console.log("Equipment saved. acknowledged:", result.acknowledged, "insertedId:", insertedId)
+      console.log(
+        "Equipment saved. acknowledged:",
+        result.acknowledged,
+        "insertedId:",
+        insertedId
+      )
 
       toast.add({
         type: "success",
@@ -181,6 +191,11 @@ export default function AddEquipmentPage() {
       // Start fresh so the same listing cannot be published again.
       setValues(initialValues)
       setPhotos([])
+
+      // Notun data jate sathe sathe dekha jay:
+      // 1) router cache refresh, 2) My Equipment page-e niye jaoa.
+      router.refresh()
+      router.push(myEquipmentPath)
     } catch (error) {
       console.error("Could not save equipment:", error)
 
@@ -224,10 +239,19 @@ export default function AddEquipmentPage() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="flex flex-col gap-5"
+          >
             {/* Equipment Name + Category */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field id="equipment-name" label="Equipment Name" required error={errors.name}>
+              <Field
+                id="equipment-name"
+                label="Equipment Name"
+                required
+                error={errors.name}
+              >
                 <Input
                   id="equipment-name"
                   value={values.name}
@@ -236,18 +260,30 @@ export default function AddEquipmentPage() {
                 />
               </Field>
 
-              <Field id="equipment-category" label="Category" required error={errors.category}>
+              <Field
+                id="equipment-category"
+                label="Category"
+                required
+                error={errors.category}
+              >
                 <Select
                   items={categories}
                   value={values.category}
                   onValueChange={(value) => setField("category", String(value))}
                 >
-                  <SelectTrigger id="equipment-category" className="w-full cursor-pointer">
-                    <SelectValue  placeholder="Select a category" />
+                  <SelectTrigger
+                    id="equipment-category"
+                    className="w-full cursor-pointer"
+                  >
+                    <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                              <SelectItem className="cursor-pointer" key={category.value} value={category.value}>
+                      <SelectItem
+                        className="cursor-pointer"
+                        key={category.value}
+                        value={category.value}
+                      >
                         {category.label}
                       </SelectItem>
                     ))}
@@ -257,33 +293,57 @@ export default function AddEquipmentPage() {
             </div>
 
             {/* Description */}
-            <Field id="equipment-description" label="Description" required error={errors.description}>
+            <Field
+              id="equipment-description"
+              label="Description"
+              required
+              error={errors.description}
+            >
               <Textarea
                 id="equipment-description"
                 rows={4}
                 value={values.description}
                 placeholder="Detailed equipment specifications, power, dimensions, operational advice..."
-                onChange={(event) => setField("description", event.target.value)}
+                onChange={(event) =>
+                  setField("description", event.target.value)
+                }
               />
             </Field>
 
             {/* Price + Rental Type + Quantity */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <Field id="equipment-price" label="Rental Price (৳ / $)" required error={errors.rentalPrice}>
+              <Field
+                id="equipment-price"
+                label="Rental Price (৳ / $)"
+                required
+                error={errors.rentalPrice}
+              >
                 <Input
                   id="equipment-price"
                   type="number"
                   min="1"
                   value={values.rentalPrice}
-                  onChange={(event) => setField("rentalPrice", event.target.value)}
+                  onChange={(event) =>
+                    setField("rentalPrice", event.target.value)
+                  }
                 />
               </Field>
 
-              <Field id="equipment-rental-type" label="Rental Type" required error={errors.rentalType}>
+              <Field
+                id="equipment-rental-type"
+                label="Rental Type"
+                required
+                error={errors.rentalType}
+              >
                 <Select
-                  items={rentalTypes.map((type) => ({ value: type, label: type }))}
+                  items={rentalTypes.map((type) => ({
+                    value: type,
+                    label: type,
+                  }))}
                   value={values.rentalType}
-                  onValueChange={(value) => setField("rentalType", String(value))}
+                  onValueChange={(value) =>
+                    setField("rentalType", String(value))
+                  }
                 >
                   <SelectTrigger id="equipment-rental-type" className="w-full">
                     <SelectValue />
@@ -298,7 +358,12 @@ export default function AddEquipmentPage() {
                 </Select>
               </Field>
 
-              <Field id="equipment-quantity" label="Available Quantity" required error={errors.quantity}>
+              <Field
+                id="equipment-quantity"
+                label="Available Quantity"
+                required
+                error={errors.quantity}
+              >
                 <Input
                   id="equipment-quantity"
                   type="number"
@@ -331,16 +396,28 @@ export default function AddEquipmentPage() {
 
               <Field id="equipment-condition" label="Condition">
                 <Select
-                  items={conditions.map((condition) => ({ value: condition, label: condition }))}
+                  items={conditions.map((condition) => ({
+                    value: condition,
+                    label: condition,
+                  }))}
                   value={values.condition}
-                  onValueChange={(value) => setField("condition", String(value))}
+                  onValueChange={(value) =>
+                    setField("condition", String(value))
+                  }
                 >
-                  <SelectTrigger id="equipment-condition" className="w-full cursor-pointer">
+                  <SelectTrigger
+                    id="equipment-condition"
+                    className="w-full cursor-pointer"
+                  >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent >
+                  <SelectContent>
                     {conditions.map((condition) => (
-                              <SelectItem className="cursor-pointer" key={condition} value={condition}>
+                      <SelectItem
+                        className="cursor-pointer"
+                        key={condition}
+                        value={condition}
+                      >
                         {condition}
                       </SelectItem>
                     ))}
@@ -350,7 +427,12 @@ export default function AddEquipmentPage() {
             </div>
 
             {/* Location */}
-            <Field id="equipment-location" label="Location (City, Area)" required error={errors.location}>
+            <Field
+              id="equipment-location"
+              label="Location (City, Area)"
+              required
+              error={errors.location}
+            >
               <Input
                 id="equipment-location"
                 value={values.location}
@@ -421,7 +503,10 @@ export default function AddEquipmentPage() {
               )}
 
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="equipment-image-urls" className="text-xs text-muted-foreground">
+                <Label
+                  htmlFor="equipment-image-urls"
+                  className="text-xs text-muted-foreground"
+                >
                   Or add additional image URLs manually (one per line)
                 </Label>
                 <Textarea
@@ -458,7 +543,7 @@ export default function AddEquipmentPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover cursor-pointer"
+                className="cursor-pointer bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
               >
                 {saving ? "Publishing..." : "Publish Equipment"}
               </Button>

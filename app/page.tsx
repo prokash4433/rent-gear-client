@@ -7,7 +7,8 @@ export default function Page() {
     <>
       {/* <Navbar /> */}
       <Banner />
-      <Workflow/>
+      
+       
     </>
   )
 }

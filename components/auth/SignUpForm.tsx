@@ -88,13 +88,11 @@ export function SignUpForm() {
     router.refresh()
   }
 
-  function handleGoogle() {
-    // Google sign-in will be connected when authentication is added.
-    toast.add({
-      type: "info",
-      title: "Google sign-in",
-      description: "This will be connected when authentication is added.",
-    })
+  const handleGoogleSignIn = async () => {
+    const data = await authClient.signIn.social({
+      provider: 'google',
+    });
+    console.log(data)
   }
 
   // Live checklist for the three password rules.
@@ -213,7 +211,7 @@ export function SignUpForm() {
         <Separator className="flex-1 bg-white/15" />
       </div>
 
-      <GoogleButton onClick={handleGoogle} />
+      <GoogleButton onClick={handleGoogleSignIn} />
 
       <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-neutral-400">
         Already have an account?

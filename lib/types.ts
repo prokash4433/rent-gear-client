@@ -160,3 +160,15 @@ export type PasswordCheck = {
   hasLowercase: boolean
   hasMinLength: boolean
 }
+
+/* ---------- Favourites ---------- */
+
+/** One row of the favourites collection: a user saved one equipment. */
+export type FavouriteDocument = {
+  _id: string
+  /** The `_id` of the saved equipment, kept as a string. */
+  equipmentId: string
+  /** Email of the user who saved it. */
+  userEmail: string
+  createdAt?: string
+}

@@ -30,7 +30,7 @@ import type {
 } from "@/lib/types"
 
 // TODO: navbar-er all-equipment link ar dashboard link ekhane boshao.
-const ALL_EQUIPMENT_HREF = "/all-equipment"
+const ALL_EQUIPMENT_HREF = "/browse-equipments"
 const DASHBOARD_HREF = "/dashboard"
 
 const categories: CategoryOption[] = [

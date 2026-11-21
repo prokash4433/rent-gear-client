@@ -311,13 +311,8 @@ export default function EquipmentList({
 
                                                                                                               <TableCell className="text-right">
                                                                                                                         <div className="flex flex-wrap items-center justify-end gap-1.5">
-                                                                                                              {/* <Button
-variant="outline"
-size="sm"
-onClick={() => openEdit(item)}>
-<Pencil />Update
-</Button> */}
-                                                                                                                                  <UpdateEquipmentDialog equipment={item} />
+                                                                                                               
+                                                                                                                        <UpdateEquipmentDialog equipment={item} />
 
 <DeleteEquipmentDialog equipment={item} />
                                                                                                                                   <Button

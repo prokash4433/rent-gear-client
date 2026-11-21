@@ -1,0 +1,83 @@
+import { BrowseFilters, SearchSortBar } from "./browse-controls"
+import { EquipmentResults } from "./equipment-results"
+import { getEquipments, normalizeEquipments } from "@/lib/api/equipments"
+
+/** Only these params are forwarded to the API. */
+const filterParams = [
+          "search",
+          "category",
+          "rentalType",
+          "minPrice",
+          "maxPrice",
+          "available",
+          "sort",
+]
+
+const BrowseEquipmentsPage = async ({
+          searchParams,
+}: {
+          searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) => {
+          const params = await searchParams
+
+          // Build the API query string from the whitelisted params only.
+          const query = new URLSearchParams()
+          for (const key of filterParams) {
+                    const value = params[key]
+                    if (Array.isArray(value)) {
+                              value.forEach((item) => item && query.append(key, item))
+                    } else if (value) {
+                              query.set(key, value)
+                    }
+          }
+          // The public page only shows approved listings
+          // (documents without a status field count as approved).
+          query.set("status", "approved")
+
+          const raw = await getEquipments(query.toString())
+          const items = normalizeEquipments(raw)
+
+          return (
+                    <div>
+                              {/* ---------- Hero ---------- */}
+                              <section className="bg-brand">
+                                        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
+                                                  <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 sm:text-4xl">
+                                                            All Equipment
+                                                  </h1>
+                                                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-neutral-800 sm:text-base">
+                                                            Browse every listing in one place —
+                                                            search by name or location, filter by
+                                                            category, rental type, price and
+                                                            availability, then rent the gear you
+                                                            need.
+                                                  </p>
+                                        </div>
+                              </section>
+
+                              {/* ---------- Search + filters + results ---------- */}
+                              <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
+                                        <SearchSortBar
+                                                  key={String(params.search ?? "")}
+                                                  params={params}
+                                        />
+
+                                        <div className="flex flex-col gap-6 lg:flex-row">
+                                                  <BrowseFilters params={params} />
+
+                                                  <div className="min-w-0 flex-1">
+                                                            {/* The key resets the client-side
+                                                                page back to 1 whenever the
+                                                                filters change. */}
+                                                            <EquipmentResults
+                                                                      key={query.toString()}
+                                                                      items={items}
+                                                            />
+                                                  </div>
+                                        </div>
+                              </div>
+                    </div>
+          )
+}
+
+export default BrowseEquipmentsPage

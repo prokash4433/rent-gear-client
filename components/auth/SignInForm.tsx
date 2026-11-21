@@ -57,14 +57,13 @@ export function SignInForm() {
     })
   }
 
-  function handleGoogle() {
-    // Google sign-in will be connected when authentication is added.
-    toast.add({
-      type: "info",
-      title: "Google sign-in",
-      description: "This will be connected when authentication is added.",
-    })
+  const handleGoogleSignIn = async () => {
+    const data = await authClient.signIn.social({
+      provider: 'google',
+    });
+    console.log(data)
   }
+
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -103,7 +102,7 @@ export function SignInForm() {
         <Separator className="flex-1 bg-white/15" />
       </div>
 
-      <GoogleButton onClick={handleGoogle} />
+      <GoogleButton onClick={handleGoogleSignIn} />
 
       <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-neutral-400">
         Don’t have an account?

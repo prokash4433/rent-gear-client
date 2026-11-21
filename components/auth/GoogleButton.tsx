@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
+ 
 
-/** Google's "G" logo drawn inline so no extra icon package is needed. */
+ 
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4">
@@ -30,6 +31,8 @@ type GoogleButtonProps = {
 
 /** "Continue with Google" button shown below both auth forms. */
 export function GoogleButton({ onClick }: GoogleButtonProps) {
+
+   
   return (
     <Button
       type="button"

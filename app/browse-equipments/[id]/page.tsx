@@ -42,7 +42,7 @@ const EquipmentDetailsPage = async ({
                                                   </h1>
                                                   <p className="mt-1 text-sm text-neutral-800">
                                                             Review the listing, then book your rental
-                                                            dates — payment happens on Stripe's secure
+                                                            dates — payment happens on Stripe&apos;s secure
                                                             page.
                                                   </p>
                                         </div>

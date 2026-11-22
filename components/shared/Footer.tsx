@@ -17,7 +17,7 @@ const Footer = () => {
           const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
                     e.preventDefault();
                     alert("Thanks for subscribing!");
-                    e.target.reset();
+                    e.currentTarget.reset();
           };
 
           return (

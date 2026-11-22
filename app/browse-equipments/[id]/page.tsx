@@ -1,5 +1,7 @@
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
 import { getEquipmentById } from "@/lib/api/equipments"
 import { auth } from "@/lib/auth"
@@ -34,6 +36,19 @@ const EquipmentDetailsPage = async ({
 
           return (
                     <div>
+                              {/* ---------- Back navigation bar ---------- */}
+                              <div className="border-b border-border/60 bg-muted/30 px-4 py-3 sm:px-6">
+                                        <div className="mx-auto max-w-7xl">
+                                                  <Link
+                                                            href="/browse-equipments"
+                                                            className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                                                  >
+                                                            <ArrowLeft className="size-3.5" />
+                                                            Back to All Equipments
+                                                  </Link>
+                                        </div>
+                              </div>
+
                               {/* ---------- Hero ---------- */}
                               <section className="bg-brand">
                                         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">

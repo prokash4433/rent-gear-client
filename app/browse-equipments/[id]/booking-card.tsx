@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
-import { rentalDays, rentalPeriods, rentalTotal } from "@/lib/booking"
+ 
 import type { EquipmentDocument } from "@/lib/types"
+import { rentalDays, rentalPeriods, rentalTotal } from "@/lib/bookings"
 
 type BookingCardProps = {
           equipment: EquipmentDocument

@@ -1,11 +1,10 @@
-import React from 'react';
+import AdminProfileForm from "./profile-form"
 
-const ProfileSettingPage = () => {
-          return (
-                    <div>
-                              <h2>Profile Setting Page</h2>
-                    </div>
-          );
-};
+export const metadata = {
+  title: "Admin Account & Profile Settings - RentalHub",
+  description: "Manage your personal information, delivery details, and avatar via ImgBB.",
+}
 
-export default ProfileSettingPage;
+export default function AdminProfilePage() {
+  return <AdminProfileForm />
+}

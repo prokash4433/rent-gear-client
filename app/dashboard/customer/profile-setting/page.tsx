@@ -1,10 +1,10 @@
-import AdminProfileForm from "./profile-form"
+import CustomerProfileForm from "./profile-form"
 
 export const metadata = {
-  title: "Admin Account & Profile Settings - RentalHub",
-  description: "Manage your personal information, delivery details, and avatar via ImgBB.",
+          title: "My Profile - RentalHub",
+          description: "Update your personal information, delivery address, and profile photo.",
 }
 
-export default function AdminProfilePage() {
-  return <AdminProfileForm />
+export default function CustomerProfilePage() {
+          return <CustomerProfileForm />
 }

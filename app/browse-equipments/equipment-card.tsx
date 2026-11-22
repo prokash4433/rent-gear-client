@@ -53,16 +53,16 @@ export function EquipmentCard({
           const available = Number(item.quantity) > 0
 
           return (
-                    <div className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm">
+                    <div className="group flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-300 ease-out hover:z-10 hover:scale-[1.03] hover:border-brand hover:shadow-xl">
                               {/* ---------- Image + badges ---------- */}
-                              <div className="relative aspect-[4/3] bg-muted">
+                              <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                                         {image ? (
                                                   // Remote URLs come from users, so a plain img is used.
                                                   // eslint-disable-next-line @next/next/no-img-element
                                                   <img
                                                             src={image}
                                                             alt={item.name}
-                                                            className="size-full object-cover"
+                                                            className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                                                   />
                                         ) : (
                                                   <span className="flex size-full items-center justify-center text-muted-foreground">
@@ -84,19 +84,15 @@ export function EquipmentCard({
                                         <button
                                                   type="button"
                                                   aria-label={
-                                                            isFavourite
-                                                                      ? "Remove from favourites"
-                                                                      : "Add to favourites"
+                                                            isFavourite ? "Remove from favourites" : "Add to favourites"
                                                   }
                                                   aria-pressed={isFavourite}
                                                   onClick={() => onToggleFavourite(item)}
-                                                  className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow ring-1 ring-black/5 transition-colors hover:text-red-500 dark:bg-neutral-900/90 dark:text-neutral-300"
+                                                  className="absolute right-2 top-2 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow ring-1 ring-black/5 transition-all duration-200 hover:scale-110 hover:text-red-500 dark:bg-neutral-900/90 dark:text-neutral-300"
                                         >
                                                   <Heart
                                                             className={
-                                                                      isFavourite
-                                                                                ? "size-4 fill-red-500 text-red-500"
-                                                                                : "size-4"
+                                                                      isFavourite ? "size-4 fill-red-500 text-red-500" : "size-4"
                                                             }
                                                   />
                                         </button>
@@ -105,9 +101,7 @@ export function EquipmentCard({
                               {/* ---------- Details ---------- */}
                               <div className="flex flex-1 flex-col gap-3 p-4">
                                         <div className="flex flex-col gap-1.5">
-                                                  <h3 className="line-clamp-1 font-semibold">
-                                                            {item.name}
-                                                  </h3>
+                                                  <h3 className="line-clamp-1 font-semibold">{item.name}</h3>
                                                   <Badge variant="secondary" className="w-fit">
                                                             {categoryLabels[item.category] ?? item.category}
                                                   </Badge>
@@ -128,7 +122,7 @@ export function EquipmentCard({
 
                                         <Button
                                                   variant="outline"
-                                                  className="mt-auto w-full"
+                                                  className="mt-auto w-full cursor-pointer"
                                                   onClick={() => onView(item)}
                                         >
                                                   View Details

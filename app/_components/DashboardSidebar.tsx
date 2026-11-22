@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { toast } from "@/components/ui/toast"
 import { signOut, useSession } from "@/lib/auth-client"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -63,7 +64,7 @@ export function DashboardSidebar() {
 
   const role = (session?.user?.role as keyof MenuItemsByRole) ?? "customer"
   const menuItems = isPending ? [] : menuItemsByRole[role] ?? menuItemsByRole.customer
-  
+
   // Check active index, matching both /all-user and /all-users, /all-equipment and /all-equipments
   const activeIndex = menuItems.findIndex((item) => {
     if (item.url === pathname) return true
@@ -74,8 +75,36 @@ export function DashboardSidebar() {
   })
 
   const handleLogout = async () => {
-    await signOut()
-    router.push("/sign-in")
+    try {
+      const { error } = await signOut()
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Logout failed",
+          description: error.message ?? "Could not log you out. Please try again.",
+          timeout: 7000,
+        })
+        return
+      }
+
+      toast.add({
+        type: "success",
+        title: "Logged out",
+        description: "You have been signed out. See you soon!",
+        timeout: 6000,
+      })
+
+      router.push("/sign-in")
+      router.refresh()
+    } catch {
+      toast.add({
+        type: "error",
+        title: "Something went wrong",
+        description: "Could not reach the server. Please try again.",
+        timeout: 7000,
+      })
+    }
   }
 
   return (
@@ -131,13 +160,16 @@ export function DashboardSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
+            <button
+              type="button"
               onClick={handleLogout}
-              className="h-10 rounded-lg px-3 text-sidebar-foreground/80 transition-colors hover:bg-destructive/15 hover:text-destructive"
+              className="hidden cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors md:inline-flex"
             >
-              <LogOut className="size-4.5" />
-              <span>Logout</span>
-            </SidebarMenuButton>
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border">
+                <LogOut className="size-4 text-[#e60023]" strokeWidth={2} />
+              </span>
+              <span className="text-sm font-bold text-[#e60023]">Logout</span>
+            </button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

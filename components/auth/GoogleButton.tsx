@@ -38,7 +38,7 @@ export function GoogleButton({ onClick }: GoogleButtonProps) {
       type="button"
       variant="outline"
       onClick={onClick}
-      className="h-10 w-full gap-2 border-white/10 bg-[#44342d] text-white hover:-translate-y-0.5 hover:bg-[#54423a] hover:text-white dark:border-white/10 dark:bg-[#44342d] dark:hover:bg-[#54423a]"
+      className="h-10 w-full cursor-pointer gap-2 border-white/10 bg-[#44342d] text-white hover:-translate-y-0.5 hover:bg-[#54423a] hover:text-white dark:border-white/10 dark:bg-[#44342d] dark:hover:bg-[#54423a]"
     >
       <GoogleIcon />
       Continue with Google

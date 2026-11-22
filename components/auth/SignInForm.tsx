@@ -13,21 +13,27 @@ import type { FormErrors, SignInFormValues } from "@/lib/types"
 import { validateSignIn } from "@/lib/validation"
 import { authClient } from "@/lib/auth-client"
 
+// Toast duration in milliseconds (default was 5000).
+const SUCCESS_TIMEOUT = 6000
+const ERROR_TIMEOUT = 7000
+
 export function SignInForm() {
   const [values, setValues] = useState<SignInFormValues>({
     email: "",
     password: "",
   })
   const [errors, setErrors] = useState<FormErrors<SignInFormValues>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Update one field and clear its error while the user types.
   function setField(field: keyof SignInFormValues, value: string) {
-    setValues({ ...values, [field]: value })
-    setErrors({ ...errors, [field]: undefined })
+    setValues((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (isSubmitting) return
 
     const nextErrors = validateSignIn(values)
     setErrors(nextErrors)
@@ -37,33 +43,74 @@ export function SignInForm() {
         type: "error",
         title: "Check the form",
         description: "Please fix the highlighted fields and try again.",
+        timeout: ERROR_TIMEOUT,
       })
       return
     }
-    const { data, error } = await authClient.signIn.email({
-      email: values.email, 
-      password: values.password,  
-      rememberMe: true,  
-      callbackURL: '/',  
-    });
 
-    
-    console.log("Sign in form data:", data, error)
+    setIsSubmitting(true)
 
-    toast.add({
-      type: "success",
-      title: "Sign in successful",
-      description: "Welcome back to Rent Gear!",
-    })
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email: values.email,
+        password: values.password,
+        rememberMe: true,
+        callbackURL: "/",
+      })
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Sign in failed",
+          description: error.message ?? "Invalid email or password.",
+          timeout: ERROR_TIMEOUT,
+        })
+        return
+      }
+
+      console.log("Sign in form data:", data)
+
+      toast.add({
+        type: "success",
+        title: "Sign in successful",
+        description: "Welcome back to Rent Gear!",
+        timeout: SUCCESS_TIMEOUT,
+      })
+    } catch {
+      toast.add({
+        type: "error",
+        title: "Something went wrong",
+        description: "Could not reach the server. Please try again.",
+        timeout: ERROR_TIMEOUT,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleGoogleSignIn = async () => {
-    const data = await authClient.signIn.social({
-      provider: 'google',
-    });
-    console.log(data)
-  }
+    try {
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+      })
 
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Google sign in failed",
+          description: error.message ?? "Please try again.",
+          timeout: ERROR_TIMEOUT,
+        })
+      }
+    } catch {
+      toast.add({
+        type: "error",
+        title: "Google sign in failed",
+        description: "Something went wrong. Please try again.",
+        timeout: ERROR_TIMEOUT,
+      })
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
@@ -91,9 +138,10 @@ export function SignInForm() {
 
       <Button
         type="submit"
-        className="h-10 w-full bg-brand text-neutral-900 hover:-translate-y-0.5 hover:bg-brand-hover"
+        disabled={isSubmitting}
+        className="h-10 w-full bg-brand text-neutral-900 hover:-translate-y-0.5 hover:bg-brand-hover cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Sign In
+        {isSubmitting ? "Signing in..." : "Sign In"}
       </Button>
 
       <div className="flex items-center gap-3 text-xs text-neutral-400">

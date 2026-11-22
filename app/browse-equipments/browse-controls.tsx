@@ -13,6 +13,7 @@ import {
           SelectTrigger,
           SelectValue,
 } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 /** The search params of the current URL, as the server component sees them. */
 export type BrowseParams = Record<string, string | string[] | undefined>
@@ -35,6 +36,17 @@ const sortOptions = [
           { value: "price-desc", label: "Price: High to Low" },
           { value: "newest", label: "Recently Added" },
 ]
+
+/** Heading color (same as the Clear All link). */
+const headingColor = "text-brand-hover"
+
+/** Label style: brand color + medium weight when its checkbox is ticked. */
+function optionLabelClass(checked: boolean) {
+          return cn(
+                    "flex cursor-pointer items-center gap-2 text-sm transition-colors",
+                    checked && "font-medium text-brand-hover"
+          )
+}
 
 /** One param value -> a list (a param can repeat in the URL). */
 function asList(value: string | string[] | undefined): string[] {
@@ -79,9 +91,7 @@ export function SearchSortBar({ params }: { params: BrowseParams }) {
                                                   event.preventDefault()
                                                   const data = new FormData(event.currentTarget)
                                                   apply({
-                                                            search: String(
-                                                                      data.get("search") ?? ""
-                                                            ).trim(),
+                                                            search: String(data.get("search") ?? "").trim(),
                                                   })
                                         }}
                               >
@@ -94,7 +104,10 @@ export function SearchSortBar({ params }: { params: BrowseParams }) {
                                                             className="h-11 pl-9"
                                                   />
                                         </div>
-                                        <Button type="submit" className="h-11 bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover">
+                                        <Button
+                                                  type="submit"
+                                                  className="h-11 cursor-pointer bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
+                                        >
                                                   Search
                                         </Button>
                               </form>
@@ -108,13 +121,7 @@ export function SearchSortBar({ params }: { params: BrowseParams }) {
                                                   value={sort}
                                                   onValueChange={(value) =>
                                                             apply({
-                                                                      sort:
-                                                                                String(value) ===
-                                                                                "default"
-                                                                                          ? undefined
-                                                                                          : String(
-                                                                                                      value
-                                                                                            ),
+                                                                      sort: String(value) === "default" ? undefined : String(value),
                                                             })
                                                   }
                                         >
@@ -165,16 +172,21 @@ export function BrowseFilters({ params }: { params: BrowseParams }) {
 
           return (
                     <aside className="w-full shrink-0 lg:w-64">
-                              <div className="flex flex-col gap-5 rounded-2xl border bg-card p-4 shadow-sm">
+                              <div className="flex flex-col gap-5 rounded-2xl border bg-card p-4 shadow-sm transition-all duration-300 ease-out hover:scale-[1.02] hover:border-brand hover:shadow-xl">
                                         <div className="flex items-center justify-between">
-                                                  <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                                                  <h2
+                                                            className={cn(
+                                                                      "flex items-center gap-2 text-sm font-semibold uppercase tracking-wide",
+                                                                      headingColor
+                                                            )}
+                                                  >
                                                             <SlidersHorizontal className="size-4" />
                                                             Filters
                                                   </h2>
                                                   <button
                                                             type="button"
                                                             onClick={clearFilters}
-                                                            className="text-xs font-medium text-brand-hover hover:underline"
+                                                            className="cursor-pointer text-xs font-medium text-brand-hover hover:underline"
                                                   >
                                                             Clear All
                                                   </button>
@@ -182,64 +194,51 @@ export function BrowseFilters({ params }: { params: BrowseParams }) {
 
                                         {/* ---------- Category ---------- */}
                                         <fieldset className="flex flex-col gap-2">
-                                                  <legend className="mb-1 text-sm font-semibold">
+                                                  <legend className={cn("mb-1 text-sm font-semibold", headingColor)}>
                                                             Category
                                                   </legend>
-                                                  {categoryOptions.map((category) => (
-                                                            <label
-                                                                      key={category.value}
-                                                                      className="flex cursor-pointer items-center gap-2 text-sm"
-                                                            >
-                                                                      <Checkbox
-                                                                                checked={categories.includes(
-                                                                                          category.value
-                                                                                )}
-                                                                                onCheckedChange={(
-                                                                                          checked
-                                                                                ) =>
-                                                                                          apply({
-                                                                                                    category: toggle(
-                                                                                                              categories,
-                                                                                                              category.value,
-                                                                                                              checked
-                                                                                                    ),
-                                                                                          })
-                                                                                }
-                                                                      />
-                                                                      {category.label}
-                                                            </label>
-                                                  ))}
+                                                  {categoryOptions.map((category) => {
+                                                            const checked = categories.includes(category.value)
+                                                            return (
+                                                                      <label
+                                                                                key={category.value}
+                                                                                className={optionLabelClass(checked)}
+                                                                      >
+                                                                                <Checkbox
+                                                                                          checked={checked}
+                                                                                          onCheckedChange={(value) =>
+                                                                                                    apply({
+                                                                                                              category: toggle(categories, category.value, value),
+                                                                                                    })
+                                                                                          }
+                                                                                />
+                                                                                {category.label}
+                                                                      </label>
+                                                            )
+                                                  })}
                                         </fieldset>
 
                                         {/* ---------- Rental Type ---------- */}
                                         <fieldset className="flex flex-col gap-2">
-                                                  <legend className="mb-1 text-sm font-semibold">
+                                                  <legend className={cn("mb-1 text-sm font-semibold", headingColor)}>
                                                             Rental Type
                                                   </legend>
-                                                  {rentalTypeOptions.map((type) => (
-                                                            <label
-                                                                      key={type}
-                                                                      className="flex cursor-pointer items-center gap-2 text-sm"
-                                                            >
-                                                                      <Checkbox
-                                                                                checked={rentalTypes.includes(
-                                                                                          type
-                                                                                )}
-                                                                                onCheckedChange={(
-                                                                                          checked
-                                                                                ) =>
-                                                                                          apply({
-                                                                                                    rentalType: toggle(
-                                                                                                              rentalTypes,
-                                                                                                              type,
-                                                                                                              checked
-                                                                                                    ),
-                                                                                          })
-                                                                                }
-                                                                      />
-                                                                      {type}
-                                                            </label>
-                                                  ))}
+                                                  {rentalTypeOptions.map((type) => {
+                                                            const checked = rentalTypes.includes(type)
+                                                            return (
+                                                                      <label key={type} className={optionLabelClass(checked)}>
+                                                                                <Checkbox
+                                                                                          checked={checked}
+                                                                                          onCheckedChange={(value) =>
+                                                                                                    apply({
+                                                                                                              rentalType: toggle(rentalTypes, type, value),
+                                                                                                    })
+                                                                                          }
+                                                                                />
+                                                                                {type}
+                                                                      </label>
+                                                            )
+                                                  })}
                                         </fieldset>
 
                                         {/* ---------- Price Range ---------- */}
@@ -247,20 +246,10 @@ export function BrowseFilters({ params }: { params: BrowseParams }) {
                                                   className="flex items-end gap-2"
                                                   onSubmit={(event) => {
                                                             event.preventDefault()
-                                                            const data = new FormData(
-                                                                      event.currentTarget
-                                                            )
+                                                            const data = new FormData(event.currentTarget)
                                                             apply({
-                                                                      minPrice: String(
-                                                                                data.get(
-                                                                                          "minPrice"
-                                                                                ) ?? ""
-                                                                      ).trim(),
-                                                                      maxPrice: String(
-                                                                                data.get(
-                                                                                          "maxPrice"
-                                                                                ) ?? ""
-                                                                      ).trim(),
+                                                                      minPrice: String(data.get("minPrice") ?? "").trim(),
+                                                                      maxPrice: String(data.get("maxPrice") ?? "").trim(),
                                                             })
                                                   }}
                                         >
@@ -301,7 +290,7 @@ export function BrowseFilters({ params }: { params: BrowseParams }) {
                                                   <Button
                                                             type="submit"
                                                             size="sm"
-                                                            className="h-9 bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
+                                                            className="h-9 cursor-pointer bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
                                                   >
                                                             Apply
                                                   </Button>
@@ -309,18 +298,14 @@ export function BrowseFilters({ params }: { params: BrowseParams }) {
 
                                         {/* ---------- Availability ---------- */}
                                         <fieldset className="flex flex-col gap-2">
-                                                  <legend className="mb-1 text-sm font-semibold">
+                                                  <legend className={cn("mb-1 text-sm font-semibold", headingColor)}>
                                                             Availability
                                                   </legend>
-                                                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                                                  <label className={optionLabelClass(available)}>
                                                             <Checkbox
                                                                       checked={available}
                                                                       onCheckedChange={(checked) =>
-                                                                                apply({
-                                                                                          available: checked
-                                                                                                    ? "true"
-                                                                                                    : undefined,
-                                                                                })
+                                                                                apply({ available: checked ? "true" : undefined })
                                                                       }
                                                             />
                                                             Available only

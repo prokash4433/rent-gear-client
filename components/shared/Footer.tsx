@@ -3,14 +3,27 @@ import Link from "next/link";
 import { FaFacebookF, FaYoutube, FaLinkedinIn, FaInstagram, FaWrench } from "react-icons/fa";
 import { GiGears } from "react-icons/gi";
 
-const quickLinks = ["Home", "All Equipment", "About Us", "Contact Us", "How It Works"];
-const categories = ["Agriculture", "Cleaning", "Electronics", "Event Equipment", "Photography"];
+const quickLinks = [
+          { label: "Home", href: "/" },
+          { label: "All Equipment", href: "/browse-equipments" },
+          { label: "About Us", href: "/about" },
+          { label: "Contact Us", href: "/contact" },
+          { label: "How It Works", href: "/how-it-works" },
+];
+
+const categories = [
+          { label: "Agriculture", href: "/browse-equipments?category=agriculture" },
+          { label: "Cleaning", href: "/browse-equipments?category=cleaning" },
+          { label: "Electronics", href: "/browse-equipments?category=electronics" },
+          { label: "Event Equipment", href: "/browse-equipments?category=events" },
+          { label: "Photography", href: "/browse-equipments?category=photography" },
+];
 
 const socialLinks = [
-          { icon: <FaFacebookF />, link: "https://facebook.com" },
-          { icon: <FaYoutube />, link: "https://youtube.com" },
-          { icon: <FaLinkedinIn />, link: "https://linkedin.com" },
-          { icon: <FaInstagram />, link: "https://instagram.com" },
+          { icon: <FaFacebookF />, link: "https://facebook.com", label: "Facebook" },
+          { icon: <FaYoutube />, link: "https://youtube.com", label: "YouTube" },
+          { icon: <FaLinkedinIn />, link: "https://linkedin.com", label: "LinkedIn" },
+          { icon: <FaInstagram />, link: "https://instagram.com", label: "Instagram" },
 ];
 
 const Footer = () => {
@@ -60,10 +73,11 @@ const Footer = () => {
 
                                                                       {/* Social icons */}
                                                                       <div className="flex gap-3 mt-5">
-                                                                                {socialLinks.map((item, index) => (
+                                                                                {socialLinks.map((item) => (
                                                                                           <a
-                                                                                                    key={index}
+                                                                                                    key={item.label}
                                                                                                     href={item.link}
+                                                                                                    aria-label={item.label}
                                                                                                     target="_blank"
                                                                                                     rel="noreferrer"
                                                                                                     className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 text-black hover:scale-110 transition"
@@ -79,8 +93,10 @@ const Footer = () => {
                                                                       <h3 className="text-xl font-semibold text-yellow-400 mb-4">Quick Links</h3>
                                                                       <ul className="space-y-2 text-gray-300">
                                                                                 {quickLinks.map((item) => (
-                                                                                          <li key={item}>
-                                                                                                    <a href="#" className="hover:text-yellow-400 transition">{item}</a>
+                                                                                          <li key={item.href}>
+                                                                                                    <Link href={item.href} className="hover:text-yellow-400 transition">
+                                                                                                              {item.label}
+                                                                                                    </Link>
                                                                                           </li>
                                                                                 ))}
                                                                       </ul>
@@ -91,8 +107,10 @@ const Footer = () => {
                                                                       <h3 className="text-xl font-semibold text-yellow-400 mb-4">Categories</h3>
                                                                       <ul className="space-y-2 text-gray-300">
                                                                                 {categories.map((item) => (
-                                                                                          <li key={item}>
-                                                                                                    <a href="#" className="hover:text-yellow-400 transition">{item}</a>
+                                                                                          <li key={item.href}>
+                                                                                                    <Link href={item.href} className="hover:text-yellow-400 transition">
+                                                                                                              {item.label}
+                                                                                                    </Link>
                                                                                           </li>
                                                                                 ))}
                                                                       </ul>
@@ -116,7 +134,7 @@ const Footer = () => {
                                                                                 />
                                                                                 <button
                                                                                           type="submit"
-                                                                                          className="bg-gradient-to-r from-yellow-300 to-yellow-500 text-black font-medium px-5 py-2 rounded-full hover:opacity-90"
+                                                                                          className="bg-gradient-to-r from-yellow-300 to-yellow-500 text-black font-medium px-5 py-2 rounded-full hover:opacity-90 cursor-pointer"
                                                                                 >
                                                                                           Subscribe
                                                                                 </button>

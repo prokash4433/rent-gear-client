@@ -200,7 +200,7 @@ export function SignUpForm() {
 
       <Button
         type="submit"
-        className="h-10 w-full bg-brand text-neutral-900 hover:-translate-y-0.5 hover:bg-brand-hover"
+        className="h-10 w-full bg-brand text-neutral-900 hover:-translate-y-0.5 hover:bg-brand-hover cursor-pointer"
       >
         Create Account
       </Button>

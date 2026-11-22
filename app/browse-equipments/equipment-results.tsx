@@ -15,11 +15,16 @@ import {
 import { toast } from "@/components/ui/toast"
 import { addFavourite, getFavourites, removeFavourite } from "@/lib/api/favourites"
 import { useSession } from "@/lib/auth-client"
+import { cn } from "@/lib/utils"
 import type { EquipmentListItem } from "@/lib/types"
 import { EquipmentCard } from "./equipment-card"
 
 /** How many cards one page shows (matches "Showing 1-9 of 11"). */
 const pageSize = 9
+
+/** Shared pagination button style: pointer cursor, hover scale + brand border. */
+const pagerButton =
+          "cursor-pointer transition-all duration-200 enabled:hover:scale-110 enabled:hover:border-brand disabled:cursor-not-allowed"
 
 export function EquipmentResults({
           items,
@@ -46,7 +51,7 @@ export function EquipmentResults({
                                                   setFavouriteIds(list.map((f) => f.equipmentId))
                                         }
                               })
-                              .catch(() => {})
+                              .catch(() => { })
                     return () => {
                               cancelled = true
                     }
@@ -63,8 +68,7 @@ export function EquipmentResults({
                               toast.add({
                                         type: "error",
                                         title: "Sign in required",
-                                        description:
-                                                  "Please sign in to save equipment to your favourites.",
+                                        description: "Please sign in to save equipment to your favourites.",
                               })
                               return
                     }
@@ -104,18 +108,13 @@ export function EquipmentResults({
                                         <EmptyHeader>
                                                   <EmptyTitle>No equipment found</EmptyTitle>
                                                   <EmptyDescription>
-                                                            Try changing your search or filters to
-                                                            find what you need.
+                                                            Try changing your search or filters to find what you need.
                                                   </EmptyDescription>
                                         </EmptyHeader>
                                         <EmptyContent>
                                                   <Button
-                                                            onClick={() =>
-                                                                      router.replace(
-                                                                                "/browse-equipments"
-                                                                      )
-                                                            }
-                                                            className="bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
+                                                            onClick={() => router.replace("/browse-equipments")}
+                                                            className="cursor-pointer bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
                                                   >
                                                             Clear all filters
                                                   </Button>
@@ -127,8 +126,7 @@ export function EquipmentResults({
           return (
                     <div className="flex flex-col gap-4">
                               <p className="text-sm text-muted-foreground">
-                                        Showing {start + 1}-{start + visible.length} of{" "}
-                                        {items.length} equipment
+                                        Showing {start + 1}-{start + visible.length} of {items.length} equipment
                               </p>
 
                               {/* ---------- Card grid ---------- */}
@@ -137,14 +135,10 @@ export function EquipmentResults({
                                                   <EquipmentCard
                                                             key={item.id}
                                                             item={item}
-                                                            isFavourite={favouriteIds.includes(
-                                                                      item.id
-                                                            )}
+                                                            isFavourite={favouriteIds.includes(item.id)}
                                                             onToggleFavourite={toggleFavourite}
                                                             onView={(equipment) =>
-                                                                      router.push(
-                                                                                `/browse-equipments/${equipment.id}`
-                                                                      )
+                                                                      router.push(`/browse-equipments/${equipment.id}`)
                                                             }
                                                   />
                                         ))}
@@ -154,56 +148,43 @@ export function EquipmentResults({
                               {totalPages > 1 && (
                                         <nav
                                                   aria-label="Pagination"
-                                                  className="flex items-center justify-center gap-1"
+                                                  className="flex flex-wrap items-center justify-center gap-1"
                                         >
                                                   <Button
                                                             variant="outline"
                                                             size="sm"
                                                             disabled={currentPage === 1}
-                                                            onClick={() =>
-                                                                      setPage(currentPage - 1)
-                                                            }
+                                                            onClick={() => setPage(currentPage - 1)}
+                                                            className={pagerButton}
                                                   >
                                                             <ChevronLeft className="size-4" />
                                                             Prev
                                                   </Button>
 
-                                                  {Array.from(
-                                                            { length: totalPages },
-                                                            (_, index) => index + 1
-                                                  ).map((pageNumber) => (
-                                                            <Button
-                                                                      key={pageNumber}
-                                                                      size="sm"
-                                                                      variant={
-                                                                                pageNumber ===
-                                                                                currentPage
-                                                                                          ? "default"
-                                                                                          : "outline"
-                                                                      }
-                                                                      className={
-                                                                                pageNumber ===
-                                                                                currentPage
-                                                                                          ? "bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
-                                                                                          : undefined
-                                                                      }
-                                                                      onClick={() =>
-                                                                                setPage(
-                                                                                          pageNumber
-                                                                                )
-                                                                      }
-                                                            >
-                                                                      {pageNumber}
-                                                            </Button>
-                                                  ))}
+                                                  {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+                                                            (pageNumber) => (
+                                                                      <Button
+                                                                                key={pageNumber}
+                                                                                size="sm"
+                                                                                variant={pageNumber === currentPage ? "default" : "outline"}
+                                                                                className={cn(
+                                                                                          pagerButton,
+                                                                                          pageNumber === currentPage &&
+                                                                                          "bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
+                                                                                )}
+                                                                                onClick={() => setPage(pageNumber)}
+                                                                      >
+                                                                                {pageNumber}
+                                                                      </Button>
+                                                            )
+                                                  )}
 
                                                   <Button
                                                             variant="outline"
                                                             size="sm"
                                                             disabled={currentPage === totalPages}
-                                                            onClick={() =>
-                                                                      setPage(currentPage + 1)
-                                                            }
+                                                            onClick={() => setPage(currentPage + 1)}
+                                                            className={pagerButton}
                                                   >
                                                             Next
                                                             <ChevronRight className="size-4" />

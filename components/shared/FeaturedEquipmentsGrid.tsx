@@ -102,13 +102,25 @@ export function FeaturedEquipmentsGrid({
   return (
     <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
-        <EquipmentCard
+        <div
           key={item.id}
-          item={item}
-          isFavourite={favouriteIds.includes(item.id)}
-          onToggleFavourite={toggleFavourite}
-          onView={handleView}
-        />
+          className={[
+            "group/card overflow-hidden rounded-2xl",
+            // hover: card scale + brand border
+            "transition duration-300 ease-out hover:z-10 hover:scale-[1.03] hover:shadow-xl hover:ring-2 hover:ring-brand",
+            // image zoom (card-er bhitore jei <img> ache, overflow-hidden er karone baire berabe na)
+            "[&_img]:transition-transform [&_img]:duration-500 [&_img]:ease-out group-hover/card:[&_img]:scale-110",
+            // View Details + Favourite click-e pointer cursor
+            "[&_button]:cursor-pointer [&_a]:cursor-pointer",
+          ].join(" ")}
+        >
+          <EquipmentCard
+            item={item}
+            isFavourite={favouriteIds.includes(item.id)}
+            onToggleFavourite={toggleFavourite}
+            onView={handleView}
+          />
+        </div>
       ))}
     </div>
   )

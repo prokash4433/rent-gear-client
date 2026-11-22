@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import { LogOut, Menu, Moon, Search, Sun, User, UserPlus } from "lucide-react"
 
@@ -14,12 +15,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import { toast } from "@/components/ui/toast"
 import { Logo } from "@/components/shared/Logo"
 import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
 import { useSession, signOut } from "@/lib/auth-client"
-
-
 
 /** Dark text is forced everywhere: the navbar always sits on the yellow brand background. */
 const onBrand = "text-neutral-900 hover:bg-black/5"
@@ -109,6 +109,7 @@ function MobileMenu({ navLinks }: { navLinks: NavLink[] }) {
 }
 
 export function Navbar() {
+  const router = useRouter()
   const { data: session } = useSession()
 
   const navLinks: NavLink[] = [
@@ -117,11 +118,39 @@ export function Navbar() {
     { label: "About Us", href: "/about" },
     { label: "Contact Us", href: "/contact" },
     { label: "How It Works", href: "/how-it-works" },
-    { label: "Dashboard", href: `/dashboard/${session?.user.role || 'customer'}` },
+    { label: "Dashboard", href: `/dashboard/${session?.user.role || "customer"}` },
   ]
 
   const handleSignOut = async () => {
-    await signOut()
+    try {
+      const { error } = await signOut()
+
+      if (error) {
+        toast.add({
+          type: "error",
+          title: "Logout failed",
+          description: error.message ?? "Could not log you out. Please try again.",
+          timeout: 7000,
+        })
+        return
+      }
+
+      toast.add({
+        type: "success",
+        title: "Logged out",
+        description: "You have been signed out. See you soon!",
+        timeout: 6000,
+      })
+
+      router.refresh()
+    } catch {
+      toast.add({
+        type: "error",
+        title: "Something went wrong",
+        description: "Could not reach the server. Please try again.",
+        timeout: 7000,
+      })
+    }
   }
 
   return (
@@ -144,8 +173,8 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <div className="hidden sm:block">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 ">
+          <div className="hidden sm:block cursor-pointer">
             <ThemeToggle />
           </div>
 
@@ -154,10 +183,14 @@ export function Navbar() {
             aria-hidden="true"
             className="mx-1 hidden h-5 w-px shrink-0 self-center bg-black/20 sm:block"
           />
-
-          <Button variant="ghost" size="icon" aria-label="Search" className={onBrand}>
+          
+          <Link
+            href="/browse-equipments"
+            aria-label="Search"
+            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), onBrand)}
+          >
             <Search className="size-4" />
-          </Button>
+          </Link>
 
           {session?.user ? (
             <>

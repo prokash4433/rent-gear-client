@@ -102,13 +102,13 @@ export function DashboardTopbar() {
         />
       </form>
 
-      <div className="ml-auto flex items-center gap-2 sm:gap-3">
-        <Link
+      <div className="ml-auto flex items-center gap-2 sm:gap-3 cursor-pointer">
+        {/* <Link
           href="/dashboard/customer/my-booking"
           className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
         >
           My Bookings
-        </Link>
+        </Link> */}
 
         {/* Theme Mode Switcher */}
         <ThemeToggle />
@@ -120,7 +120,7 @@ export function DashboardTopbar() {
               <button
                 type="button"
                 aria-label="Notifications"
-                className="relative flex size-9 items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="relative flex size-9 items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
               >
                 <Bell className="size-4" />
                 {hasUnread && (

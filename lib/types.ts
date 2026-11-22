@@ -49,6 +49,18 @@ export type SearchBarProps = {
 /** Whether a user signs up to rent equipment (customer), list it (owner), or administers the site (admin). */
 export type UserRole = "customer" | "owner" | "admin"
 
+/** Registered user details for Admin user management table. */
+export type AdminUser = {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  image?: string | null
+  emailVerified?: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
 /* ---------- Dashboard sidebar ---------- */
 
 /** One item in the dashboard sidebar menu. */

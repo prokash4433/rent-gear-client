@@ -18,9 +18,9 @@ import type { EquipmentListItem } from "@/lib/types"
  * login nai -> /sign-in, login ache -> /browse-equipments/[id].
  */
 export function FeaturedEquipmentsGrid({
-  items,
+  items = [],
 }: {
-  items: EquipmentListItem[]
+  items?: EquipmentListItem[]
 }) {
   const router = useRouter()
   const { data: session, isPending } = useSession()
@@ -34,9 +34,9 @@ export function FeaturedEquipmentsGrid({
     let cancelled = false
     getFavourites(email)
       .then((list) => {
-        if (!cancelled) setFavouriteIds(list.map((f) => f.equipmentId))
+        if (!cancelled) setFavouriteIds((list ?? []).map((f) => f.equipmentId))
       })
-      .catch(() => {})
+      .catch(() => { })
     return () => {
       cancelled = true
     }
@@ -89,6 +89,14 @@ export function FeaturedEquipmentsGrid({
       return
     }
     router.push(`/browse-equipments/${item.id}`)
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return (
+      <p className="mt-10 text-center text-sm text-muted-foreground">
+        No featured equipment available right now.
+      </p>
+    )
   }
 
   return (

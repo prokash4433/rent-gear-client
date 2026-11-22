@@ -1,11 +1,13 @@
-import React from 'react';
+import { getAllAdminEquipments } from "@/lib/actions/equipments"
+import AdminEquipmentTable from "./equipment-table"
 
-const AllEquipmentPage = () => {
-          return (
-                    <div>
-                              <h2>All Equipment Page</h2>
-                    </div>
-          );
-};
+export const metadata = {
+  title: "All Equipment Catalog | Admin Dashboard - RentalHub",
+  description: "Review, approve, reject, update and manage all equipment listings.",
+}
 
-export default AllEquipmentPage;
+export default async function AllEquipmentPage() {
+  const items = await getAllAdminEquipments()
+
+  return <AdminEquipmentTable initialItems={items} />
+}

@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
  
 import { DashboardSidebar } from "../_components/DashboardSidebar"
+import { DashboardTopbar } from "../_components/dashboard/topbar";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           return (
@@ -12,6 +13,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               pushing the whole page sideways. */}
           <main className="flex-1 min-w-0">
           <SidebarTrigger />
+        <DashboardTopbar />
           {children}
           </main>
           </SidebarProvider>

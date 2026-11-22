@@ -1,11 +1,13 @@
-import React from 'react';
+import { getAllUsers } from "@/lib/actions/users"
+import UserTable from "./user-table"
 
-const AllUserPage = () => {
-          return (
-                    <div>
-                              <h2>All User Page</h2>
-                    </div>
-          );
-};
+export const metadata = {
+  title: "All Users | Admin Dashboard - RentalHub",
+  description: "View and manage all registered users, permissions, and roles.",
+}
 
-export default AllUserPage;
+export default async function AllUserPage() {
+  const users = await getAllUsers()
+
+  return <UserTable initialUsers={users} />
+}

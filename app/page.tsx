@@ -1,5 +1,9 @@
 import { Banner } from "@/components/shared/Banner"
 import FeaturedEquipmentsPage from "@/components/shared/FeaturedEquipments"
+import { FeaturedEquipmentsGrid } from "@/components/shared/FeaturedEquipmentsGrid"
+ 
+ 
+ 
 import HowItWorksPage from "@/components/shared/ItWorks"
 import WayChoosePage from "@/components/shared/WayChoose"
  
@@ -10,7 +14,7 @@ export default function Page() {
     <>
       {/* <Navbar /> */}
       <Banner />
-      <FeaturedEquipmentsPage/>
+      <FeaturedEquipmentsPage />
       {/* <Workflow/> */}
       <WayChoosePage />
       <HowItWorksPage />

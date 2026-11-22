@@ -30,7 +30,6 @@ import {
 import type { MenuItemsByRole } from "@/lib/types"
 import Link from "next/link"
 import { UserAvatar } from "./dashboard/User-Avatar"
- 
 
 const menuItemsByRole: MenuItemsByRole = {
   customer: [
@@ -49,8 +48,8 @@ const menuItemsByRole: MenuItemsByRole = {
   ],
   admin: [
     { name: "Overview", url: "/dashboard/admin", icon: LayoutDashboard },
-    { name: "All Users", url: "/dashboard/admin/all-user", icon: Users },
-    { name: "All Equipment", url: "/dashboard/admin/all-equipment", icon: Package },
+    { name: "All Users", url: "/dashboard/admin/all-users", icon: Users },
+    { name: "All Equipment", url: "/dashboard/admin/all-equipments", icon: Package },
     { name: "All Rentals", url: "/dashboard/admin/all-rentals", icon: CalendarCheck },
     { name: "Analytics", url: "/dashboard/admin/analytics", icon: ChartColumn },
     { name: "Profile", url: "/dashboard/admin/profile", icon: User },
@@ -64,22 +63,30 @@ export function DashboardSidebar() {
 
   const role = (session?.user?.role as keyof MenuItemsByRole) ?? "customer"
   const menuItems = isPending ? [] : menuItemsByRole[role] ?? menuItemsByRole.customer
-  const activeIndex = menuItems.findIndex((item) => item.url === pathname)
+  
+  // Check active index, matching both /all-user and /all-users, /all-equipment and /all-equipments
+  const activeIndex = menuItems.findIndex((item) => {
+    if (item.url === pathname) return true
+    if (item.url === "/dashboard/admin/all-users" && pathname === "/dashboard/admin/all-user") return true
+    if (item.url === "/dashboard/admin/all-equipments" && (pathname === "/dashboard/admin/all-equipment" || pathname === "/dashboard/admin/all-requipment")) return true
+    if (item.url === "/dashboard/admin/all-rentals" && pathname === "/dashboard/all-rentals") return true
+    return false
+  })
 
   const handleLogout = async () => {
     await signOut()
-    router.push("/login")
+    router.push("/sign-in")
   }
 
   return (
-    <Sidebar className="border-r-0">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <SidebarHeader className="px-5 pt-5 pb-4">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-brand text-white">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-brand text-neutral-900 shadow-xs">
             <Wrench className="size-5" />
           </span>
-          <span className="text-xl font-extrabold tracking-tight text-white">
+          <span className="text-xl font-extrabold tracking-tight text-sidebar-foreground">
             Rental<span className="text-brand">Hub</span>
           </span>
         </Link>
@@ -87,17 +94,17 @@ export function DashboardSidebar() {
 
       <SidebarContent className="gap-0">
         {/* User profile */}
-        <SidebarGroup className="items-center gap-2 border-b border-white/10 px-4 pb-5 pt-4 text-center">
+        <SidebarGroup className="items-center gap-2 border-b border-sidebar-border px-4 pb-5 pt-4 text-center">
           <UserAvatar
             src={session?.user?.image}
             name={session?.user?.name}
-            className="size-16 ring-2 ring-brand/70"
+            className="size-16 ring-2 ring-brand"
           />
           <div className="min-w-0 max-w-full">
-            <p className="truncate text-sm font-bold text-white">
-              {session?.user?.name ?? "Loading..."}
+            <p className="truncate text-sm font-bold text-sidebar-foreground">
+              {session?.user?.name ?? "User"}
             </p>
-            <p className="text-xs capitalize text-white/60">{role}</p>
+            <p className="text-xs font-medium capitalize text-muted-foreground">{role}</p>
           </div>
         </SidebarGroup>
 
@@ -109,9 +116,9 @@ export function DashboardSidebar() {
                 <SidebarMenuButton
                   render={<Link href={item.url} />}
                   isActive={index === activeIndex}
-                  className="h-10 rounded-lg px-3 text-white/80 hover:bg-white/10 hover:text-white data-active:bg-brand data-active:font-semibold data-active:text-white data-active:hover:bg-brand-hover data-active:active:bg-brand-hover"
+                  className="h-10 rounded-lg px-3 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-active:bg-brand data-active:font-semibold data-active:text-neutral-900 data-active:hover:bg-brand-hover"
                 >
-                  <item.icon />
+                  <item.icon className="size-4.5" />
                   <span>{item.name}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -121,14 +128,14 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       {/* Logout */}
-      <SidebarFooter className="border-t border-white/10 p-3">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
-              className="h-10 rounded-lg px-3 text-white/80 hover:bg-red-500/15 hover:text-red-300"
+              className="h-10 rounded-lg px-3 text-sidebar-foreground/80 transition-colors hover:bg-destructive/15 hover:text-destructive"
             >
-              <LogOut />
+              <LogOut className="size-4.5" />
               <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

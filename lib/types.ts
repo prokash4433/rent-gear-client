@@ -184,3 +184,28 @@ export type FavouriteDocument = {
   userEmail: string
   createdAt?: string
 }
+
+/* ---------- Admin Rentals / Bookings ---------- */
+export type RentalStatus = "pending" | "confirmed" | "cancelled"
+
+export type RentalItem = {
+  id: string
+  equipmentId?: string
+  equipmentName: string
+  equipmentImage?: string
+  ownerId?: string
+  ownerEmail?: string
+  renterName: string
+  renterEmail: string
+  startDate: string
+  endDate: string
+  durationText?: string
+  quantity: number
+  totalAmount: number
+  paymentStatus: "paid" | "unpaid"
+  status: RentalStatus
+  contactNumber: string
+  deliveryAddress: string
+  notes?: string
+  createdAt: string
+}

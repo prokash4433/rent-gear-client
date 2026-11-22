@@ -1,11 +1,13 @@
-import React from 'react';
+import { getAllRentals } from "@/lib/actions/rentals"
+import AdminRentalsList from "./rentals-list"
 
-const AllRentalsPage = () => {
-          return (
-                    <div>
-                              <h2>All Rentals Page</h2>
-                    </div>
-          );
-};
+export const metadata = {
+  title: "All Rentals & Bookings | Admin Dashboard - RentalHub",
+  description: "Audit all equipment rentals, track payout totals, and manage booking statuses.",
+}
 
-export default AllRentalsPage;
+export default async function AllRentalsPage() {
+  const rentals = await getAllRentals()
+
+  return <AdminRentalsList initialRentals={rentals} />
+}

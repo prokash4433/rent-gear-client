@@ -186,7 +186,7 @@ export type FavouriteDocument = {
 }
 
 /* ---------- Admin Rentals / Bookings ---------- */
-export type RentalStatus = "pending" | "confirmed" | "cancelled"
+export type RentalStatus = "pending" | "confirmed" | "cancelled" | "completed"
 
 export type RentalItem = {
   id: string
@@ -208,4 +208,62 @@ export type RentalItem = {
   deliveryAddress: string
   notes?: string
   createdAt: string
+}
+
+/* ---------- Customer: dashboard & My Bookings ---------- */
+
+/** Lifecycle of a booking as stored in the bookings collection. */
+export type BookingStatus =
+  | "unpaid"
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed"
+
+/** One booking as the customer sees it on My Bookings and the dashboard. */
+export type MyBooking = {
+  id: string
+  equipmentId: string
+  equipmentName: string
+  equipmentImage?: string
+  startDate: string
+  endDate: string
+  quantity: number
+  rentalType: string
+  periods: number
+  totalAmount: number
+  deliveryAddress: string
+  contactNumber: string
+  notes?: string
+  status: BookingStatus
+  paymentStatus: "paid" | "unpaid"
+  createdAt: string
+}
+
+/** Everything the customer dashboard renders, computed from live data. */
+export type CustomerDashboardData = {
+  stats: {
+    totalBookings: number
+    favoriteItems: number
+    totalSpent: number
+    reviews: number
+    pending: number
+    confirmed: number
+    cancelled: number
+    completed: number
+  }
+  /** Bookings created per month for the last 6 months, oldest month first. */
+  monthly: { month: string; bookings: number }[]
+  /** Status breakdown feeding the donut chart. */
+  statusBreakdown: { name: string; value: number; color: string }[]
+  /** The 5 newest bookings. */
+  recent: MyBooking[]
+}
+
+/** Activity summary shown on the admin Manage User page. */
+export type UserActivityStats = {
+  totalBookings: number
+  activeBookings: number
+  totalSpent: number
+  favoriteItems: number
 }

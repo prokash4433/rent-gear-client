@@ -85,6 +85,15 @@ export function DashboardTopbar() {
   const [query, setQuery] = useState("")
   const [hasUnread, setHasUnread] = useState(true)
 
+  // Each role keeps its own profile page; customers land on Profile Settings.
+  const role = (session?.user?.role as string) ?? "customer"
+  const profileHref =
+    role === "admin"
+      ? "/dashboard/admin/profile"
+      : role === "owner"
+        ? "/dashboard/owner/profile"
+        : "/dashboard/customer/profile-setting"
+
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:px-6">
       {/* Mobile sidebar toggle button */}
@@ -176,8 +185,8 @@ export function DashboardTopbar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User Avatar linking to profile */}
-        <Link href="/dashboard/admin/profile" title="Admin Profile Settings">
+        {/* User Avatar linking to the signed-in user's profile */}
+        <Link href={profileHref} title="Profile Settings">
           <UserAvatar
             src={session?.user?.image}
             name={session?.user?.name}

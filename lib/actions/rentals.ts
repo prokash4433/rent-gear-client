@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { ObjectId } from "mongodb"
+import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import type { RentalItem, RentalStatus } from "@/lib/types"
 
@@ -150,7 +152,12 @@ export async function getAllRentals(): Promise<RentalItem[]> {
       }
 
       let status: RentalStatus = "pending"
-      if (doc.status === "confirmed" || doc.status === "cancelled" || doc.status === "pending") {
+      if (
+        doc.status === "confirmed" ||
+        doc.status === "cancelled" ||
+        doc.status === "pending" ||
+        doc.status === "completed"
+      ) {
         status = doc.status
       } else if (doc.paymentStatus === "paid" || doc.status === "paid") {
         status = "confirmed"
@@ -230,5 +237,43 @@ export async function deleteRental(bookingId: string) {
   } catch (error) {
     console.error(`Failed to delete booking ${bookingId}:`, error)
     return { success: false, error: "Database delete failed" }
+  }
+}
+
+/**
+ * Lets a customer cancel their own booking. The session email must own the
+ * booking, only unpaid bookings can be cancelled, and finished bookings
+ * (cancelled / completed) are left alone.
+ */
+export async function cancelMyBooking(bookingId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session?.user?.email) {
+      return { success: false, error: "Sign in required" }
+    }
+    if (!ObjectId.isValid(bookingId)) {
+      return { success: false, error: "Invalid booking" }
+    }
+
+    const result = await bookingsCollection.updateOne(
+      {
+        _id: new ObjectId(bookingId),
+        userEmail: session.user.email,
+        paymentStatus: "unpaid",
+        status: { $nin: ["cancelled", "completed"] },
+      },
+      { $set: { status: "cancelled", updatedAt: new Date() } }
+    )
+
+    if (result.matchedCount === 0) {
+      return { success: false, error: "This booking can no longer be cancelled" }
+    }
+
+    revalidatePath("/dashboard/customer/my-booking")
+    revalidatePath("/dashboard/customer")
+    return { success: true }
+  } catch (error) {
+    console.error(`Failed to cancel booking ${bookingId}:`, error)
+    return { success: false, error: "Could not cancel the booking" }
   }
 }

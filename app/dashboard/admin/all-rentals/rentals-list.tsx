@@ -23,6 +23,7 @@ import {
   CreditCard,
   Receipt,
   AlertTriangle,
+  Flag,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -108,8 +109,13 @@ export default function AdminRentalsList({
   const pendingCount = rentals.filter((r) => r.status === "pending").length
   const confirmedCount = rentals.filter((r) => r.status === "confirmed").length
   const cancelledCount = rentals.filter((r) => r.status === "cancelled").length
+  const completedCount = rentals.filter((r) => r.status === "completed").length
   const totalRevenue = rentals
-    .filter((r) => r.status === "confirmed" && r.paymentStatus === "paid")
+    .filter(
+      (r) =>
+        (r.status === "confirmed" || r.status === "completed") &&
+        r.paymentStatus === "paid"
+    )
     .reduce((sum, r) => sum + r.totalAmount, 0)
 
   // Filtered
@@ -313,6 +319,18 @@ export default function AdminRentalsList({
             </button>
             <button
               type="button"
+              onClick={() => setStatusFilter("completed")}
+              className={cn(
+                "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all",
+                statusFilter === "completed"
+                  ? "bg-brand font-bold text-neutral-900 shadow-xs"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              Completed ({completedCount})
+            </button>
+            <button
+              type="button"
               onClick={() => setStatusFilter("cancelled")}
               className={cn(
                 "rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all",
@@ -495,6 +513,16 @@ export default function AdminRentalsList({
                           <Clock className="size-3.5 text-amber-600" />
                           <span>Pending</span>
                         </Button>
+                      ) : status === "completed" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 gap-1.5 rounded-xl border border-sky-500/30 bg-sky-50/70 px-3 text-xs font-semibold text-sky-700 shadow-2xs hover:bg-sky-100 hover:text-sky-800 dark:bg-sky-500/15 dark:text-sky-300 dark:hover:bg-sky-500/25"
+                          title="Rental completed"
+                        >
+                          <Flag className="size-3.5 text-sky-600" />
+                          <span>Completed</span>
+                        </Button>
                       ) : (
                         <Button
                           variant="outline"
@@ -506,7 +534,9 @@ export default function AdminRentalsList({
                         </Button>
                       )}
 
-                      {/* Dropdown status changer */}
+                      {/* Dropdown status changer: full status control for admins.
+                          Confirmed opens the payment modal above; every other
+                          status change happens right here. */}
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           render={
@@ -521,20 +551,37 @@ export default function AdminRentalsList({
                             </Button>
                           }
                         />
-                        <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuLabel>Set Booking Status</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusChange(rental, "confirmed")}>
+                          <DropdownMenuItem
+                            disabled={status === "confirmed"}
+                            onClick={() => handleStatusChange(rental, "confirmed")}
+                          >
                             <CheckCircle2 className="size-4 text-emerald-600" />
-                            <span>Mark Confirmed</span>
+                            <span>Confirmed</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusChange(rental, "pending")}>
+                          <DropdownMenuItem
+                            disabled={status === "completed"}
+                            onClick={() => handleStatusChange(rental, "completed")}
+                          >
+                            <Flag className="size-4 text-sky-600" />
+                            <span>Completed</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            disabled={status === "pending"}
+                            onClick={() => handleStatusChange(rental, "pending")}
+                          >
                             <Clock className="size-4 text-amber-600" />
-                            <span>Mark Pending</span>
+                            <span>Pending</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleStatusChange(rental, "cancelled")}>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            disabled={status === "cancelled"}
+                            onClick={() => handleStatusChange(rental, "cancelled")}
+                          >
                             <XCircle className="size-4 text-rose-600" />
-                            <span>Mark Cancelled</span>
+                            <span>Cancelled</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

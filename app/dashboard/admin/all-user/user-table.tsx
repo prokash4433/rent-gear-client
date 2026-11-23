@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Check,
@@ -122,6 +123,7 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all")
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   // State for modals
   const [roleModalUser, setRoleModalUser] = useState<AdminUser | null>(null)
@@ -481,6 +483,15 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
                               <DropdownMenuItem onClick={() => setViewUser(user)}>
                                 <UserCheck className="size-4" />
                                 <span>View Details</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  router.push(`/dashboard/admin/manage-users/${user.id}`)
+                                }
+                              >
+                                <UserCog className="size-4 text-brand-hover" />
+                                <span>Manage User</span>
                               </DropdownMenuItem>
 
                               <DropdownMenuItem

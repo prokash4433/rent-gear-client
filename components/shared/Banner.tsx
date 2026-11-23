@@ -172,9 +172,8 @@ export function Banner() {
         </h1>
 
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-neutral-800 sm:text-base">
-          The largest AI-powered equipment marketplace in the region. Discover,
-          rent, and buy equipment, tools, and spare parts from trusted suppliers
-          across Southeast Asia — all in just a few clicks.
+          Your Trusted Equipment Marketplace.
+          Connect with trusted suppliers across to discover, rent, and purchase the equipment your business needs.
         </p>
 
         <div className="relative mt-8 w-full sm:mt-10">

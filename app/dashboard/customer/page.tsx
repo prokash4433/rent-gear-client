@@ -237,7 +237,7 @@ const CustomerDashboardPage = async () => {
       </section>
 
       {/* ---------- Charts ---------- */}
-      <CustomerCharts monthly={monthly} statusBreakdown={statusBreakdown} />
+      <CustomerCharts monthly={monthly} statusBreakdown={statusBreakdown} stats={stats} />
 
       {/* ---------- Recent bookings + quick actions ---------- */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">

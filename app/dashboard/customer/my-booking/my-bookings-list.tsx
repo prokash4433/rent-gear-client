@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -119,15 +119,40 @@ type Props = {
   bookings: MyBooking[]
   /** True when Stripe sent the user back from a cancelled checkout. */
   cancelled: boolean
+  /** "success" or "failed" when redirected from /payment/success. */
+  paymentResult?: string
 }
 
-const MyBookingsList = ({ bookings, cancelled }: Props) => {
+const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
   const router = useRouter()
   const [filter, setFilter] = useState<Filter>("all")
   const [payingId, setPayingId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [details, setDetails] = useState<MyBooking | null>(null)
   const [showCancelledNotice, setShowCancelledNotice] = useState(cancelled)
+  const [paymentToastShown, setPaymentToastShown] = useState(false)
+
+  // Show payment success/failure toast when redirected from /payment/success
+  useEffect(() => {
+    if (paymentToastShown || !paymentResult) return
+    setPaymentToastShown(true)
+    if (paymentResult === "success") {
+      toast.add({
+        type: "success",
+        title: "Payment successful!",
+        description:
+          "Your booking is confirmed. The equipment owner has been notified.",
+      })
+    } else if (paymentResult === "failed") {
+      toast.add({
+        type: "error",
+        title: "Payment could not be verified",
+        description:
+          "Something went wrong while verifying your payment. Please contact support if you were charged.",
+        timeout: 10000,
+      })
+    }
+  }, [paymentResult, paymentToastShown])
 
   const visible = useMemo(
     () => (filter === "all" ? bookings : bookings.filter((b) => b.status === filter)),

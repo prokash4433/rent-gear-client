@@ -24,10 +24,17 @@ const MyBookingPage = async ({
 
   const params = await searchParams
   const cancelled = params.cancelled === "1"
+  const payment = typeof params.payment === "string" ? params.payment : ""
 
   const bookings = await getMyBookings(session.user.email)
 
-  return <MyBookingsList bookings={bookings} cancelled={cancelled} />
+  return (
+    <MyBookingsList
+      bookings={bookings}
+      cancelled={cancelled}
+      paymentResult={payment}
+    />
+  )
 }
 
 export default MyBookingPage

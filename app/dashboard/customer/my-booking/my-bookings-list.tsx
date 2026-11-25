@@ -13,6 +13,7 @@ import {
   Flag,
   Info,
   Star,
+  TriangleAlert,
   X,
   XCircle,
 } from "lucide-react"
@@ -71,7 +72,7 @@ function durationLabel(start: string, end: string) {
     Math.round(
       (new Date(end + "T00:00:00").getTime() -
         new Date(start + "T00:00:00").getTime()) /
-        86_400_000
+      86_400_000
     ) + 1
   if (days < 1) return "—"
   if (days >= 7 && days % 7 === 0) return `${days / 7} week${days > 7 ? "s" : ""}`
@@ -129,6 +130,7 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
   const [payingId, setPayingId] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [details, setDetails] = useState<MyBooking | null>(null)
+  const [cancelTarget, setCancelTarget] = useState<MyBooking | null>(null)
   const [showCancelledNotice, setShowCancelledNotice] = useState(cancelled)
   const [paymentToastShown, setPaymentToastShown] = useState(false)
 
@@ -190,8 +192,11 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
     }
   }
 
-  const cancelBooking = async (booking: MyBooking) => {
-    if (!confirm("Cancel this booking? This cannot be undone.")) return
+  // Called when user confirms inside the custom dialog
+  const confirmCancel = async () => {
+    if (!cancelTarget) return
+    const booking = cancelTarget
+
     try {
       setCancellingId(booking.id)
       const res = await cancelMyBooking(booking.id)
@@ -199,8 +204,9 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
         toast.add({
           type: "success",
           title: "Booking cancelled",
-          description: `${booking.equipmentName} has been cancelled.`,
+          description: `${booking.equipmentName} has been cancelled. No payment was taken.`,
         })
+        setCancelTarget(null)
         router.refresh()
       } else {
         toast.add({
@@ -221,6 +227,8 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
       setCancellingId(null)
     }
   }
+
+  const isCancelling = cancellingId !== null
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-4">
@@ -416,7 +424,7 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
                     <button
                       type="button"
                       disabled={cancellingId === b.id}
-                      onClick={() => cancelBooking(b)}
+                      onClick={() => setCancelTarget(b)}
                       className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-1.5 text-xs font-semibold text-red-600 transition-all hover:bg-red-50 hover:underline disabled:cursor-not-allowed disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-500/10"
                     >
                       <Ban className="size-3.5" />
@@ -429,6 +437,50 @@ const MyBookingsList = ({ bookings, cancelled, paymentResult }: Props) => {
           )
         })
       )}
+
+      {/* ---------- Cancel confirmation dialog ---------- */}
+      <Dialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !isCancelling) setCancelTarget(null)
+        }}
+      >
+        {cancelTarget && (
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TriangleAlert className="size-5 text-red-600 dark:text-red-400" />
+                Cancel this booking?
+              </DialogTitle>
+              <DialogDescription>
+                <span className="font-semibold">{cancelTarget.equipmentName}</span>{" "}
+                ({fmt(cancelTarget.startDate)} – {fmt(cancelTarget.endDate)}) will be
+                cancelled. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isCancelling}
+                onClick={() => setCancelTarget(null)}
+                className="cursor-pointer"
+              >
+                Keep Booking
+              </Button>
+              <Button
+                type="button"
+                disabled={isCancelling}
+                onClick={confirmCancel}
+                className="cursor-pointer bg-red-600 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isCancelling ? "Cancelling..." : "Yes, Cancel Booking"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
 
       {/* ---------- Booking details preview ---------- */}
       <Dialog open={details !== null} onOpenChange={(open) => !open && setDetails(null)}>

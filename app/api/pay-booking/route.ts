@@ -89,10 +89,12 @@ export async function POST(req: Request) {
     const equipmentName = String(booking.equipmentName ?? 'Equipment Rental')
     const rentalType = String(booking.rentalType ?? 'Daily')
 
+    // No customer_email so Stripe does not lock/verify the email field —
+    // the card input (Visa) is shown immediately at the top.
     const origin = new URL(req.url).origin
     const checkout = await stripe.checkout.sessions.create({
       mode: 'payment',
-      customer_email: userEmail,
+      payment_method_types: ['card'],
       line_items: [
         {
           quantity: 1,

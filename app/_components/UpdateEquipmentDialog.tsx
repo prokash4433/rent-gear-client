@@ -19,9 +19,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/toast"
 import { updateEquipment } from "@/lib/actions/equipments"
-import type { RawEquipment } from "../dashboard/owner/my-equipment/equipment-list"
+import type { EquipmentListItem } from "@/lib/types"
 
-const UpdateEquipmentDialog = ({ equipment }: { equipment: RawEquipment }) => {
+const UpdateEquipmentDialog = ({
+          equipment,
+          trigger,
+}: {
+          equipment: EquipmentListItem
+          /** Custom element that opens the dialog (defaults to an Update button). */
+          trigger?: React.ReactElement
+}) => {
           const router = useRouter()
           const [open, setOpen] = useState(false)
           const [loading, setLoading] = useState(false)
@@ -54,8 +61,7 @@ const UpdateEquipmentDialog = ({ equipment }: { equipment: RawEquipment }) => {
 
                     try {
                               setLoading(true)
-                              const res = await updateEquipment(equipment.id, { rentalPrice, quantity })
-                              console.log("Update", equipment.id, res)
+                              await updateEquipment(equipment.id, { rentalPrice, quantity })
 
                               setOpen(false)
 
@@ -81,7 +87,15 @@ const UpdateEquipmentDialog = ({ equipment }: { equipment: RawEquipment }) => {
 
           return (
                     <Dialog open={open} onOpenChange={setOpen}>
-                              <DialogTrigger render={<Button variant="outline" size="sm">Update</Button>} />
+                              <DialogTrigger
+                                        render={
+                                                  trigger ?? (
+                                                            <Button variant="outline" size="sm">
+                                                                      Update
+                                                            </Button>
+                                                  )
+                                        }
+                              />
                               <DialogContent className="sm:max-w-sm">
                                         <form onSubmit={handleUpdateEquipment} className="flex flex-col gap-4">
                                                   <DialogHeader>

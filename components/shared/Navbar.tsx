@@ -117,7 +117,7 @@ export function Navbar() {
     { label: "All Equipment", href: "/browse-equipments" },
     { label: "About Us", href: "/about" },
     { label: "Contact Us", href: "/contact" },
-    { label: "How It Works", href: "/how-it-works" },
+    { label: "How It Works", href: "/ItWorks" },
     { label: "Dashboard", href: `/dashboard/${session?.user.role || "customer"}` },
   ]
 

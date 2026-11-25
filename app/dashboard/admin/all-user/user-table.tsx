@@ -2,16 +2,15 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Check,
   CheckCircle2,
+  ChevronDown,
+  Eye,
   Loader2,
   Mail,
-  MoreVertical,
   Search,
-  Shield,
   ShieldCheck,
   Trash2,
   UserCheck,
@@ -39,14 +38,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -73,23 +64,38 @@ import { updateUserRole, deleteUser } from "@/lib/actions/users"
 import type { AdminUser, UserRole } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
-const roleStyles: Record<UserRole, { badge: string; icon: typeof Users; label: string }> = {
+const roleStyles: Record<
+  UserRole,
+  { badge: string; ring: string; icon: typeof Users; label: string }
+> = {
   customer: {
     badge: "border-sky-500/20 bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+    ring: "ring-sky-400/60",
     icon: Users,
     label: "Customer",
   },
   owner: {
     badge: "border-amber-500/20 bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+    ring: "ring-amber-400/60",
     icon: UserCheck,
     label: "Owner",
   },
   admin: {
     badge: "border-purple-500/20 bg-purple-50 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
+    ring: "ring-purple-400/60",
     icon: ShieldCheck,
     label: "Admin",
   },
 }
+
+const ROLES: UserRole[] = ["customer", "owner", "admin"]
+
+const FILTERS: { key: "all" | UserRole; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "customer", label: "Customers" },
+  { key: "owner", label: "Owners" },
+  { key: "admin", label: "Admins" },
+]
 
 function formatDate(dateString: string) {
   try {
@@ -123,7 +129,6 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all")
   const [isPending, startTransition] = useTransition()
-  const router = useRouter()
 
   // State for modals
   const [roleModalUser, setRoleModalUser] = useState<AdminUser | null>(null)
@@ -133,11 +138,14 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUpdatingRole, setIsUpdatingRole] = useState(false)
 
-  // Counts for tabs & metric cards
+  // Counts
   const totalCount = users.length
-  const customerCount = users.filter((u) => u.role === "customer").length
-  const ownerCount = users.filter((u) => u.role === "owner").length
-  const adminCount = users.filter((u) => u.role === "admin").length
+  const counts: Record<"all" | UserRole, number> = {
+    all: totalCount,
+    customer: users.filter((u) => u.role === "customer").length,
+    owner: users.filter((u) => u.role === "owner").length,
+    admin: users.filter((u) => u.role === "admin").length,
+  }
 
   // Filtered users
   const filteredUsers = users.filter((user) => {
@@ -222,6 +230,33 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
     })
   }
 
+  const statCards = [
+    {
+      label: "Total Users",
+      value: counts.all,
+      icon: Users,
+      tone: "bg-brand/20 text-brand-hover",
+    },
+    {
+      label: "Customers",
+      value: counts.customer,
+      icon: Users,
+      tone: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+    },
+    {
+      label: "Owners",
+      value: counts.owner,
+      icon: UserCheck,
+      tone: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    },
+    {
+      label: "Admins",
+      value: counts.admin,
+      icon: ShieldCheck,
+      tone: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+    },
+  ]
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
       {/* Back to overview */}
@@ -236,145 +271,96 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
       </div>
 
       {/* Summary Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Card className="rounded-2xl border-border/70 bg-card p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Total Users</span>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-brand/20 text-brand-hover">
-              <Users className="size-4" />
-            </span>
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{totalCount}</p>
-        </Card>
-
-        <Card className="rounded-2xl border-border/70 bg-card p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Customers</span>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500/15 text-sky-600 dark:text-sky-400">
-              <Users className="size-4" />
-            </span>
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{customerCount}</p>
-        </Card>
-
-        <Card className="rounded-2xl border-border/70 bg-card p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Owners</span>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400">
-              <UserCheck className="size-4" />
-            </span>
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{ownerCount}</p>
-        </Card>
-
-        <Card className="rounded-2xl border-border/70 bg-card p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Admins</span>
-            <span className="flex size-7 items-center justify-center rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400">
-              <ShieldCheck className="size-4" />
-            </span>
-          </div>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{adminCount}</p>
-        </Card>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {statCards.map((s) => (
+          <Card
+            key={s.label}
+            className="rounded-2xl border-border/70 bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">{s.label}</span>
+              <span className={cn("flex size-8 items-center justify-center rounded-xl", s.tone)}>
+                <s.icon className="size-4" />
+              </span>
+            </div>
+            <p className="mt-3 text-3xl font-extrabold tracking-tight text-foreground">
+              {s.value}
+            </p>
+          </Card>
+        ))}
       </div>
 
       {/* Main Table Card */}
       <Card className="overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm">
-        <CardHeader className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="flex flex-col gap-4 border-b border-border/60 bg-gradient-to-r from-brand/10 via-transparent to-transparent pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2.5 text-xl font-bold text-foreground">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-brand/20 text-brand-hover">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-brand/20 text-brand-hover">
                 <UserCog className="size-5" />
               </span>
-              Registered Platform Users ({totalCount})
+              Registered Platform Users
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                {totalCount}
+              </span>
             </CardTitle>
-            <CardDescription className="mt-1 text-sm text-muted-foreground">
-              View user accounts, adjust access roles (Customer, Owner, Admin), and manage member privileges.
+            <CardDescription className="mt-1.5 text-sm text-muted-foreground">
+              View user accounts, adjust access roles, and manage member privileges.
             </CardDescription>
           </div>
 
           {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border/60 bg-muted/30 p-1">
-            <button
-              type="button"
-              onClick={() => setRoleFilter("all")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                roleFilter === "all"
-                  ? "bg-brand font-semibold text-neutral-900 shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              All ({totalCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter("customer")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                roleFilter === "customer"
-                  ? "bg-brand font-semibold text-neutral-900 shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Customers ({customerCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter("owner")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                roleFilter === "owner"
-                  ? "bg-brand font-semibold text-neutral-900 shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Owners ({ownerCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter("admin")}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                roleFilter === "admin"
-                  ? "bg-brand font-semibold text-neutral-900 shadow-xs"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              Admins ({adminCount})
-            </button>
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-border/60 bg-muted/30 p-1">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setRoleFilter(f.key)}
+                className={cn(
+                  "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                  roleFilter === f.key
+                    ? "bg-brand font-semibold text-neutral-900 shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {f.label} ({counts[f.key]})
+              </button>
+            ))}
           </div>
         </CardHeader>
 
         {/* Search controls */}
-        <div className="border-b border-border/50 bg-muted/10 p-4">
-          <div className="relative max-w-md">
+        <div className="flex flex-col gap-2 border-b border-border/50 bg-muted/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search by user name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-9 rounded-xl pl-9 text-sm"
+              className="h-10 rounded-xl pl-9 pr-14 text-sm"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground"
               >
                 Clear
               </button>
             )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Showing <span className="font-semibold text-foreground">{filteredUsers.length}</span> of{" "}
+            <span className="font-semibold text-foreground">{totalCount}</span> users
+          </p>
         </div>
 
         {/* Users Table */}
         <CardContent className="p-0">
           {filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <UserX className="size-6" />
+            <div className="flex flex-col items-center justify-center p-14 text-center">
+              <span className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                <UserX className="size-7" />
               </span>
               <h3 className="mt-3 text-base font-semibold text-foreground">No users found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -385,15 +371,27 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <Table className="min-w-[800px]">
+              <Table className="min-w-[860px]">
                 <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-[280px]">Name</TableHead>
-                    <TableHead className="w-[240px]">Email</TableHead>
-                    <TableHead className="w-[140px]">Role</TableHead>
-                    <TableHead className="w-[180px]">Registration Date</TableHead>
-                    <TableHead className="w-[150px]">Change Role</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
+                    <TableHead className="pl-5 text-[11px] font-bold uppercase tracking-wider">
+                      User
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider">
+                      Email
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider">
+                      Role
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider">
+                      Joined
+                    </TableHead>
+                    <TableHead className="text-[11px] font-bold uppercase tracking-wider">
+                      Change Role
+                    </TableHead>
+                    <TableHead className="pr-5 text-right text-[11px] font-bold uppercase tracking-wider">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -401,21 +399,27 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
                     const roleInfo = roleStyles[user.role] ?? roleStyles.customer
 
                     return (
-                      <TableRow key={user.id} className="transition-colors hover:bg-muted/40">
+                      <TableRow
+                        key={user.id}
+                        className="group transition-colors hover:bg-brand/5"
+                      >
                         {/* Name + Avatar */}
-                        <TableCell>
+                        <TableCell className="pl-5">
                           <div className="flex items-center gap-3">
                             <UserAvatar
                               src={user.image}
                               name={user.name}
-                              className="size-9 rounded-full ring-1 ring-border"
+                              className={cn(
+                                "size-10 rounded-full ring-2 ring-offset-2 ring-offset-card",
+                                roleInfo.ring
+                              )}
                             />
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-foreground">
                                 {user.name}
                               </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                ID: {user.id.slice(-6)}
+                              <p className="truncate font-mono text-[11px] text-muted-foreground">
+                                #{user.id.slice(-6)}
                               </p>
                             </div>
                           </div>
@@ -431,7 +435,10 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
 
                         {/* Role Badge */}
                         <TableCell>
-                          <Badge variant="outline" className={cn("gap-1 font-medium capitalize", roleInfo.badge)}>
+                          <Badge
+                            variant="outline"
+                            className={cn("gap-1 rounded-full px-2.5 font-semibold", roleInfo.badge)}
+                          >
                             <roleInfo.icon className="size-3" />
                             {roleInfo.label}
                           </Badge>
@@ -451,69 +458,48 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
 
                         {/* Quick Role Change Selector */}
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className="relative inline-block">
                             <select
                               aria-label={`Change role for ${user.name}`}
                               value={user.role}
                               disabled={isPending}
-                              onChange={(e) => handleRoleChange(user, e.target.value as UserRole)}
-                              className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground transition-colors hover:border-brand focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
+                              onChange={(e) =>
+                                handleRoleChange(user, e.target.value as UserRole)
+                              }
+                              className="h-9 cursor-pointer appearance-none rounded-xl border border-border bg-background pl-3 pr-8 text-xs font-semibold text-foreground shadow-xs transition-colors hover:border-brand focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              <option value="customer">Customer</option>
-                              <option value="owner">Owner</option>
-                              <option value="admin">Admin</option>
+                              {ROLES.map((r) => (
+                                <option key={r} value={r}>
+                                  {roleStyles[r].label}
+                                </option>
+                              ))}
                             </select>
+                            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                           </div>
                         </TableCell>
 
-                        {/* Manage Users Actions Menu */}
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-                                  <span>Manage</span>
-                                  <MoreVertical className="size-3.5" />
-                                </Button>
-                              }
-                            />
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuLabel>Manage User</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setViewUser(user)}>
-                                <UserCheck className="size-4" />
-                                <span>View Details</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  router.push(`/dashboard/admin/manage-users/${user.id}`)
-                                }
-                              >
-                                <UserCog className="size-4 text-brand-hover" />
-                                <span>Manage User</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedRole(user.role)
-                                  setRoleModalUser(user)
-                                }}
-                              >
-                                <Shield className="size-4 text-brand-hover" />
-                                <span>Change Role</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteCandidate(user)}
-                              >
-                                <Trash2 className="size-4" />
-                                <span>Delete User</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        {/* Actions */}
+                        <TableCell className="pr-5">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              title="View details"
+                              aria-label={`View details of ${user.name}`}
+                              onClick={() => setViewUser(user)}
+                              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-brand/10 hover:text-foreground"
+                            >
+                              <Eye className="size-4" />
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete user"
+                              aria-label={`Delete ${user.name}`}
+                              onClick={() => setDeleteCandidate(user)}
+                              className="inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -525,7 +511,7 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
         </CardContent>
       </Card>
 
-      {/* ---------- Change Role Dialog ---------- */}
+      {/* ---------- Change Role Dialog (opened from View Details) ---------- */}
       <Dialog
         open={roleModalUser !== null}
         onOpenChange={(open) => {
@@ -547,7 +533,7 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
             <div className="flex flex-col gap-3 py-2">
               <Label className="text-xs font-semibold text-muted-foreground">Select New Role</Label>
               <div className="grid grid-cols-1 gap-2.5">
-                {(["customer", "owner", "admin"] as UserRole[]).map((r) => {
+                {ROLES.map((r) => {
                   const info = roleStyles[r]
                   const isSelected = selectedRole === r
 
@@ -557,7 +543,7 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
                       type="button"
                       onClick={() => setSelectedRole(r)}
                       className={cn(
-                        "flex items-center justify-between rounded-xl border p-3 text-left transition-all",
+                        "flex cursor-pointer items-center justify-between rounded-xl border p-3 text-left transition-all",
                         isSelected
                           ? "border-brand bg-brand/10 ring-1 ring-brand"
                           : "border-border hover:bg-muted/50"
@@ -581,7 +567,7 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
                           </p>
                         </div>
                       </div>
-                      {isSelected && <Check className="size-4 text-brand-hover shrink-0" />}
+                      {isSelected && <Check className="size-4 shrink-0 text-brand-hover" />}
                     </button>
                   )
                 })}
@@ -657,10 +643,10 @@ export default function UserTable({ initialUsers }: { initialUsers: AdminUser[] 
                 </div>
               </div>
 
-              <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border border-border/50 p-3">
                   <dt className="text-xs font-medium text-muted-foreground">User ID</dt>
-                  <dd className="mt-1 font-mono text-xs break-all text-foreground">{viewUser.id}</dd>
+                  <dd className="mt-1 break-all font-mono text-xs text-foreground">{viewUser.id}</dd>
                 </div>
 
                 <div className="rounded-lg border border-border/50 p-3">

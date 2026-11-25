@@ -538,7 +538,7 @@ export default function AdminRentalsList({
                           Confirmed opens the payment modal above; every other
                           status change happens right here. */}
                       <DropdownMenu>
-                        <DropdownMenuTrigger
+                        {/* <DropdownMenuTrigger
                           render={
                             <Button
                               variant="outline"
@@ -550,7 +550,7 @@ export default function AdminRentalsList({
                               <ChevronDown className="size-3.5 opacity-60" />
                             </Button>
                           }
-                        />
+                        /> */}
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuLabel>Set Booking Status</DropdownMenuLabel>
                           <DropdownMenuSeparator />

@@ -13,6 +13,16 @@ import type {
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
 const equipmentsCollection = db.collection("equipments")
 
+/** Every route that renders equipment data, so a change shows up everywhere. */
+function revalidateEquipmentPaths() {
+  revalidatePath("/dashboard/admin/all-equipments")
+  revalidatePath("/dashboard/admin/all-equipment")
+  revalidatePath("/dashboard/owner")
+  revalidatePath("/dashboard/owner/my-equipment")
+  revalidatePath("/dashboard/owner/analytics")
+  revalidatePath("/browse-equipments")
+}
+
 /**
  * Normalizes MongoDB / API documents to safe serialized EquipmentListItem objects.
  */
@@ -137,9 +147,7 @@ export const deleteEquipment = async (equipmentId: string) => {
       : { id: equipmentId }
 
     const dbResult = await equipmentsCollection.deleteOne(filter)
-    revalidatePath("/dashboard/admin/all-equipment")
-    revalidatePath("/dashboard/owner/my-equipment")
-    revalidatePath("/browse-equipments")
+    revalidateEquipmentPaths()
 
     return {
       acknowledged: true,
@@ -194,12 +202,12 @@ export const updateEquipment = async (
     if (data.condition !== undefined) updateDoc.condition = data.condition
     if (data.location !== undefined) updateDoc.location = data.location
 
-    await equipmentsCollection.updateOne(filter, { $set: updateDoc })
-    revalidatePath("/dashboard/admin/all-equipment")
-    revalidatePath("/dashboard/owner/my-equipment")
-    revalidatePath("/browse-equipments")
+    const result = await equipmentsCollection.updateOne(filter, {
+      $set: updateDoc,
+    })
+    revalidateEquipmentPaths()
 
-    return { acknowledged: true, modifiedCount: 1 }
+    return { acknowledged: true, modifiedCount: result.modifiedCount }
   } catch (error) {
     console.error("Direct MongoDB update failed:", error)
     if (apiSucceeded) {
@@ -245,9 +253,7 @@ export async function updateEquipmentStatus(
       },
     })
 
-    revalidatePath("/dashboard/admin/all-equipment")
-    revalidatePath("/dashboard/owner/my-equipment")
-    revalidatePath("/browse-equipments")
+    revalidateEquipmentPaths()
 
     return {
       success: true,

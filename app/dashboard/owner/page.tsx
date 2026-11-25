@@ -9,6 +9,7 @@ import {
   Clock,
   DollarSign,
   Package,
+  Plus,
   Settings,
   XCircle,
 } from "lucide-react"
@@ -24,7 +25,7 @@ import {
 import { auth } from "@/lib/auth"
 import { getOwnerDashboard } from "@/lib/data/owner"
 import { cn } from "@/lib/utils"
-import { OwnerRevenueChart } from "./owner-revenue-chart"
+import { BookingStatusChart, EarningsChart } from "./charts"
 
 export const metadata = {
   title: "Owner Dashboard - RentalHub",
@@ -50,21 +51,25 @@ function formatDate(value: string) {
 const STATUS_STYLES: Record<string, string> = {
   pending:
     "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
+  unpaid:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
   confirmed:
     "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
   completed:
     "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-300",
   cancelled:
     "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300",
-  unpaid:
-    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
+  approved:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
+  rejected:
+    "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300",
 }
 
 function StatusChip({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize",
+        "inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold capitalize",
         STATUS_STYLES[status] ?? STATUS_STYLES.pending
       )}
     >
@@ -73,7 +78,7 @@ function StatusChip({ status }: { status: string }) {
   )
 }
 
-/** Small stat card. */
+/** Small stat card under the welcome banner. */
 function StatCard({
   label,
   value,
@@ -119,7 +124,9 @@ export default async function OwnerDashboardPage() {
   if (!session) redirect("/sign-in")
 
   const data = await getOwnerDashboard(session.user.email)
-  const { stats, monthlyRevenue, recentBookings, topEquipment } = data
+  const { stats, monthlyRevenue, statusBreakdown, recentBookings, topEquipment } =
+    data
+  const firstName = (session.user.name ?? "there").split(" ")[0]
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
@@ -133,20 +140,29 @@ export default async function OwnerDashboardPage() {
               Owner Dashboard
             </p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
-              Manage Your Equipment & Rentals
+              Welcome back, {firstName} 👋
             </h1>
             <p className="mt-1.5 max-w-md text-sm text-neutral-300">
               Monitor listings, review rental bookings, and track your monthly
               earnings.
             </p>
           </div>
-          <Button
-            render={<Link href="/dashboard/owner/my-equipment" />}
-            className="shrink-0 cursor-pointer bg-brand font-bold text-neutral-900 hover:bg-brand-hover"
-          >
-            Manage Equipment
-            <ArrowRight className="size-4" />
-          </Button>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button
+              render={<Link href="/dashboard/owner/add-equipment" />}
+              className="cursor-pointer bg-white/10 font-bold text-white ring-1 ring-white/20 hover:bg-white/20"
+            >
+              <Plus className="size-4" />
+              Add Equipment
+            </Button>
+            <Button
+              render={<Link href="/dashboard/owner/my-equipment" />}
+              className="cursor-pointer bg-brand font-bold text-neutral-900 hover:bg-brand-hover"
+            >
+              Manage Equipment
+              <ArrowRight className="size-4" />
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -155,7 +171,7 @@ export default async function OwnerDashboardPage() {
         <StatCard
           label="Listed Equipment"
           value={String(stats.listedEquipment)}
-          tag="Active"
+          tag={`${stats.approvedListings} Approved`}
           icon={Boxes}
           tone="bg-brand/20 text-brand-hover"
         />
@@ -205,7 +221,7 @@ export default async function OwnerDashboardPage() {
               XCircle,
             ],
             [
-              "In-Stock / Available",
+              "Units Available",
               stats.inStockAvailable,
               "bg-sky-500/15 text-sky-700 dark:text-sky-300",
               Package,
@@ -234,8 +250,18 @@ export default async function OwnerDashboardPage() {
         ))}
       </section>
 
-      {/* ---------- Revenue chart ---------- */}
-      <OwnerRevenueChart monthlyRevenue={monthlyRevenue} />
+      {/* ---------- Charts (live server data) ---------- */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <EarningsChart
+            data={monthlyRevenue.map((entry) => ({
+              month: entry.month,
+              value: entry.earnings,
+            }))}
+          />
+        </div>
+        <BookingStatusChart data={statusBreakdown} />
+      </section>
 
       {/* ---------- Recent bookings + listed equipment ---------- */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -274,16 +300,50 @@ export default async function OwnerDashboardPage() {
                   key={b.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-all hover:border-brand/50 hover:bg-muted/40"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-foreground">
-                      {b.equipmentName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Rented by: {b.renterName} •{" "}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      {b.equipmentImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={b.equipmentImage}
+                          alt={b.equipmentName}
+                          loading="lazy"
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-full items-center justify-center">
+                          <Package className="size-4 text-muted-foreground/60" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="truncate text-sm font-bold text-foreground">
+                          {b.equipmentName}
+                        </p>
+                        <StatusChip status={b.status} />
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {b.renterName} • {formatDate(b.startDate)} –{" "}
+                        {formatDate(b.endDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-extrabold text-brand-hover">
                       {formatTaka(b.totalAmount)}
                     </p>
+                    <p
+                      className={cn(
+                        "text-[10px] font-bold uppercase",
+                        b.paymentStatus === "paid"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-muted-foreground"
+                      )}
+                    >
+                      {b.paymentStatus}
+                    </p>
                   </div>
-                  <StatusChip status={b.status} />
                 </div>
               ))
             )}
@@ -332,32 +392,33 @@ export default async function OwnerDashboardPage() {
                   key={eq.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-all hover:border-brand/50 hover:bg-muted/40"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="size-10 shrink-0 overflow-hidden rounded-lg bg-neutral-200">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
                       {eq.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={eq.image}
                           alt={eq.name}
+                          loading="lazy"
                           className="size-full object-cover"
                         />
                       ) : (
-                        <div className="flex size-full items-center justify-center text-[10px] text-neutral-500">
-                          No img
-                        </div>
+                        <span className="flex size-full items-center justify-center">
+                          <Package className="size-4 text-muted-foreground/60" />
+                        </span>
                       )}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-bold text-foreground">
                         {eq.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        ৳{eq.rentalPrice} / {eq.rentalType} • Stock:{" "}
-                        {eq.quantity}
+                      <p className="truncate text-xs text-muted-foreground">
+                        ৳{Number(eq.rentalPrice || 0).toLocaleString("en-US")} /{" "}
+                        {eq.rentalType} • Stock: {eq.quantity}
                       </p>
                     </div>
                   </div>
-                  <StatusChip status={eq.status} />
+                  <StatusChip status={eq.status ?? "pending"} />
                 </div>
               ))
             )}
@@ -366,7 +427,7 @@ export default async function OwnerDashboardPage() {
       </section>
 
       {/* ---------- Bottom CTA ---------- */}
-      <section className="flex flex-col items-center gap-4 rounded-2xl bg-[#faf6f1] border border-border/70 px-6 py-7 text-center sm:flex-row sm:justify-between sm:text-left dark:bg-neutral-900">
+      <section className="flex flex-col items-center gap-4 rounded-2xl border border-border/70 bg-[#faf6f1] px-6 py-7 text-center dark:bg-neutral-900 sm:flex-row sm:justify-between sm:text-left">
         <div>
           <h2 className="text-lg font-extrabold tracking-tight text-foreground sm:text-xl">
             Need to manage your listings or add new machinery?

@@ -139,7 +139,7 @@ export default async function AdminDashboardPage() {
               Platform Control Center
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl text-white">
-              RentalHub Global System Analytics
+              Rent Gear Global System Analytics
             </h1>
             <p className="max-w-2xl text-xs sm:text-sm text-white/70">
               Full administrative oversight over users, equipment approval queue, bookings, and revenue.

@@ -1,5 +1,4 @@
-import { RawEquipment } from "@/app/dashboard/owner/my-equipment/equipment-list";
-import type { EquipmentDocument, EquipmentListItem } from "@/lib/types";
+import type { EquipmentDocument, EquipmentListItem, RawEquipment } from "@/lib/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
 

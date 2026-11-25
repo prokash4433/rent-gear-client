@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import type { RawEquipment } from "../dashboard/owner/my-equipment/equipment-list"
+import type { EquipmentListItem } from "@/lib/types"
 import { deleteEquipment } from "@/lib/actions/equipments"
 import { useState } from "react"
 import { toast } from "@/components/ui/toast"
@@ -23,17 +23,28 @@ import { useRouter } from "next/navigation"
 
 export function DeleteEquipmentDialog({
   equipment,
+  trigger,
 }: {
-  equipment: RawEquipment
+  equipment: EquipmentListItem
+  /** Custom element that opens the confirm dialog (defaults to a Delete button). */
+  trigger?: React.ReactElement
 }) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
 
   const handleDelete = async () => {
-    const res = await deleteEquipment(equipment.id)
-    console.log("deleting", equipment.id, res)
+    try {
+      const res = await deleteEquipment(equipment.id)
 
-    if (res.deletedCount) {
+      if (!res.deletedCount) {
+        toast.add({
+          type: "error",
+          title: "Could not delete listing",
+          description: `${equipment.name} was not found. Refresh the page and try again.`,
+        })
+        return
+      }
+
       setOpen(false)
 
       toast.add({
@@ -44,6 +55,13 @@ export function DeleteEquipmentDialog({
 
       // Server theke notun data ane, jate deleted row table theke soriye jay
       router.refresh()
+    } catch (error) {
+      console.error("delete failed", error)
+      toast.add({
+        type: "error",
+        title: "Could not delete listing",
+        description: `Something went wrong while deleting ${equipment.name}. Please try again.`,
+      })
     }
   }
 
@@ -51,9 +69,11 @@ export function DeleteEquipmentDialog({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
         render={
-          <Button variant="destructive" size="sm">
-            <Trash2Icon />
-          </Button>
+          trigger ?? (
+            <Button variant="destructive" size="sm">
+              <Trash2Icon />
+            </Button>
+          )
         }
       />
       <AlertDialogContent size="sm">

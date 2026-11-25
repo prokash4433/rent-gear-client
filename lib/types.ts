@@ -166,6 +166,33 @@ export type EquipmentDocument = Omit<Partial<EquipmentPayload>, "imageUrls"> & {
 /** Validation message for one field. An empty object means "no errors". */
 export type FormErrors<T> = Partial<Record<keyof T, string>>
 
+/**
+ * One document as GET /equipments returns it, loosely typed: every field is
+ * optional because documents created before a field existed (ownerEmail,
+ * status, ...) do not have it, and the API may send numbers or strings.
+ */
+export type RawEquipment = {
+  _id?: string
+  id?: string
+  name?: string
+  category?: string
+  description?: string
+  rentalPrice?: string | number
+  rentalType?: string
+  quantity?: string | number
+  brand?: string
+  model?: string
+  condition?: string
+  location?: string
+  imageUrls?: string[] | string
+  terms?: string
+  status?: EquipmentStatus
+  ownerEmail?: string
+  photos?: string[]
+  createdAt?: string | Date
+  updatedAt?: string | Date
+}
+
 /** Result of checking the three Sign Up password rules. */
 export type PasswordCheck = {
   hasUppercase: boolean

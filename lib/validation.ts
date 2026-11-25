@@ -56,9 +56,9 @@ export function validateSignUp(
   }
 
   if (!values.photo.trim()) {
-    errors.photo = "Photo URL is required"
+    errors.photo = "Profile photo is required"
   } else if (!/^https?:\/\/\S+$/.test(values.photo)) {
-    errors.photo = "Enter a URL starting with http:// or https://"
+    errors.photo = "Upload a valid profile photo"
   }
 
   if (!values.password) {

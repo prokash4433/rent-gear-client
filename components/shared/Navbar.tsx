@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer"
 import { toast } from "@/components/ui/toast"
 import { Logo } from "@/components/shared/Logo"
+import { UserAvatar } from "@/app/_components/dashboard/User-Avatar"
 import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
 import { useSession, signOut } from "@/lib/auth-client"
@@ -121,6 +122,15 @@ export function Navbar() {
     { label: "Dashboard", href: `/dashboard/${session?.user.role || "customer"}` },
   ]
 
+  // Each role keeps its own profile page — the avatar links straight to it.
+  const role = (session?.user?.role as string) ?? "customer"
+  const profileHref =
+    role === "admin"
+      ? "/dashboard/admin/profile"
+      : role === "owner"
+        ? "/dashboard/owner/profile"
+        : "/dashboard/customer/profile-setting"
+
   const handleSignOut = async () => {
     try {
       const { error } = await signOut()
@@ -194,7 +204,21 @@ export function Navbar() {
 
           {session?.user ? (
             <>
-              <span className="text-[#EDEDEF]">Welcome, {session.user.name}!</span>
+              {/* Signed-in user: avatar + greeting, both linking to the profile page */}
+              <Link
+                href={profileHref}
+                title="Profile settings"
+                className="flex cursor-pointer items-center gap-2 rounded-full py-1 pl-1 pr-1.5 transition-colors hover:bg-black/5 sm:pr-3"
+              >
+                <UserAvatar
+                  src={session.user.image}
+                  name={session.user.name}
+                  className="size-8 bg-neutral-900 text-neutral-100 ring-2 ring-black/15"
+                />
+                <span className="hidden text-sm font-medium text-neutral-900 sm:block">
+                  Welcome, {session.user.name}!
+                </span>
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}

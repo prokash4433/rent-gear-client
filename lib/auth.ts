@@ -21,6 +21,20 @@ export const auth = betterAuth({
                                         defaultValue: "customer",
                                         input: true,
                               },
+                              // Contact details edited on the profile pages and
+                              // saved through authClient.updateUser().
+                              phone: {
+                                        type: "string",
+                                        required: false,
+                                        defaultValue: "",
+                                        input: true,
+                              },
+                              address: {
+                                        type: "string",
+                                        required: false,
+                                        defaultValue: "",
+                                        input: true,
+                              },
                     },
           },
           socialProviders: {

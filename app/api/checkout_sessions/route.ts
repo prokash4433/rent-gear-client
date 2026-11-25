@@ -120,12 +120,13 @@ export async function POST(req: Request) {
     })
 
     // Stripe-hosted checkout page.
-    // No customer_email so Stripe does not lock/verify the email field —
-    // the card input (Visa) is shown immediately at the top.
+    // Card only (Visa/Mastercard/Amex) and no customer_email, so Stripe does
+    // not lock or ask the customer to verify the email field — the card input
+    // (Visa) is shown immediately at the top.
     const origin = new URL(req.url).origin
     const checkout = await stripe.checkout.sessions.create({
       mode: 'payment',
-      payment_method_types: ['card'],
+      allowed_payment_method_types: ['card'],
       line_items: [
         {
           quantity: 1,

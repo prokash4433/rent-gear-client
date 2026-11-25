@@ -1,34 +1,85 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
-import { cn } from "cn"
 
 import { buttonVariants } from "@/components/ui/button"
-import { getEquipments, normalizeEquipments } from "@/lib/api/equipments"
-import type { EquipmentListItem } from "@/lib/types"
+import { db } from "@/lib/db"
+import type { EquipmentListItem, EquipmentStatus } from "@/lib/types"
+import { cn } from "@/lib/utils"
 import { FeaturedEquipmentsGrid } from "./FeaturedEquipmentsGrid"
 
+const equipments = db.collection("equipments")
+
 /**
- * Homepage er featured section: approved equipment theke
- * (API-er ?limit=6) shudhu 6ta item dekhay.
+ * Listings that are live: approved by the admin, or older documents saved
+ * before the status field existed (the same rule checkout uses).
  */
-const FeaturedEquipmentsPage = async () => {
-  let items: EquipmentListItem[] = []
+const liveListings = { $or: [{ status: "approved" }, { status: { $exists: false } }] }
 
-  try {
-    const raw = await getEquipments("status=approved&limit=6")
-
-    // ---------- DEBUG (pore muche dio) ----------
-    console.log("[Featured] RAW type:", Array.isArray(raw) ? "array" : typeof raw)
-    console.log("[Featured] RAW:", JSON.stringify(raw, null, 2))
-    // --------------------------------------------
-
-    items = normalizeEquipments(raw)
-
-    console.log("[Featured] NORMALIZED count:", items.length)
-  } catch (err) {
-    console.error("[Featured] FETCH ERROR:", err)
-    items = []
+/** imageUrls is stored as an array or as one newline-separated string. */
+function normalizeImageUrls(imageUrls: unknown): string {
+  if (Array.isArray(imageUrls)) {
+    return imageUrls.filter((url): url is string => typeof url === "string").join("\n")
   }
+  if (typeof imageUrls === "string") return imageUrls
+  return ""
+}
+
+/** One MongoDB document -> the shape EquipmentCard renders. */
+function normalizeDoc(doc: Record<string, unknown>, index: number): EquipmentListItem {
+  const status: EquipmentStatus | undefined =
+    doc.status === "approved" || doc.status === "rejected" || doc.status === "pending"
+      ? doc.status
+      : undefined
+
+  return {
+    id: doc._id ? String(doc._id) : `equipment-${index}`,
+    name: String(doc.name ?? "Untitled Equipment"),
+    category: String(doc.category ?? ""),
+    description: String(doc.description ?? ""),
+    rentalPrice: String(doc.rentalPrice ?? ""),
+    rentalType: String(doc.rentalType ?? "Daily"),
+    quantity: String(doc.quantity ?? ""),
+    brand: String(doc.brand ?? ""),
+    model: String(doc.model ?? ""),
+    condition: String(doc.condition ?? "Good"),
+    location: String(doc.location ?? ""),
+    imageUrls: normalizeImageUrls(doc.imageUrls),
+    terms: String(doc.terms ?? ""),
+    status,
+    ownerEmail: String(doc.ownerEmail ?? ""),
+  }
+}
+
+/**
+ * The 6 newest listings worth showing, read straight from MongoDB with a
+ * server-side limit(6):
+ * - a real http(s) image URL, otherwise the card would show a broken image,
+ * - a price above 0, otherwise the card would render "৳NaN" (a few older
+ *   approved documents have a null/NaN price).
+ * No document carries createdAt, so the time-ordered ObjectId gives the
+ * newest-first order.
+ */
+async function getFeaturedEquipments(): Promise<EquipmentListItem[]> {
+  try {
+    const docs = await equipments
+      .find({
+        ...liveListings,
+        imageUrls: { $regex: /^https?:\/\// },
+        $expr: { $gt: ["$rentalPrice", 0] },
+      })
+      .sort({ _id: -1 })
+      .limit(6)
+      .toArray()
+
+    return docs.map((doc, index) => normalizeDoc(doc as Record<string, unknown>, index))
+  } catch (error) {
+    console.error("Failed to load featured equipments:", error)
+    return []
+  }
+}
+
+const FeaturedEquipments = async () => {
+  const items = await getFeaturedEquipments()
 
   return (
     <section className="bg-[#fffaf0] py-14">
@@ -70,4 +121,4 @@ const FeaturedEquipmentsPage = async () => {
   )
 }
 
-export default FeaturedEquipmentsPage
+export default FeaturedEquipments

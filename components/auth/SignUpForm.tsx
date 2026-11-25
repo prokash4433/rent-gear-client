@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import type { FormEvent } from "react"
+import type { ChangeEvent, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
-import { Check, Circle, Store, User } from "lucide-react"
+import { Check, Circle, Loader2, Store, Trash2, Upload, User } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/toast"
 import { FormField } from "@/components/auth/FormField"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { authClient } from "@/lib/auth-client"
+import { uploadToImageBB } from "@/lib/imagebb"
 import { cn } from "@/lib/utils"
 import type { FormErrors, SignUpFormValues, UserRole } from "@/lib/types"
 import { checkPassword, validateSignUp } from "@/lib/validation"
@@ -35,6 +36,9 @@ export function SignUpForm() {
   })
   const [errors, setErrors] = useState<FormErrors<SignUpFormValues>>({})
 
+  // The picked photo is uploaded to ImgBB before the account is created.
+  const [photoUploading, setPhotoUploading] = useState(false)
+
   // The account type picked with the Customer / Owner buttons.
   const [role, setRole] = useState<UserRole>("customer")
 
@@ -44,8 +48,55 @@ export function SignUpForm() {
     setErrors({ ...errors, [field]: undefined })
   }
 
+  // Reads a file straight from the device, uploads it to ImgBB
+  // (FormData + method: "POST") and stores the hosted URL in `photo`.
+  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+
+    setErrors((prev) => ({ ...prev, photo: undefined }))
+    setPhotoUploading(true)
+
+    try {
+      const url = await uploadToImageBB(file)
+      setValues((prev) => ({ ...prev, photo: url }))
+      toast.add({
+        type: "success",
+        title: "Photo uploaded",
+        description: "Your profile photo is hosted on ImgBB.",
+      })
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not upload the photo. Please try again."
+      setErrors((prev) => ({ ...prev, photo: message }))
+      toast.add({
+        type: "error",
+        title: "Photo upload failed",
+        description: message,
+        timeout: 7000,
+      })
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  function handlePhotoRemove() {
+    setValues((prev) => ({ ...prev, photo: "" }))
+    setErrors((prev) => ({ ...prev, photo: undefined }))
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (photoUploading) {
+      toast.add({
+        type: "error",
+        title: "Photo is still uploading",
+        description: "Hang on a moment while your profile photo finishes uploading.",
+      })
+      return
+    }
 
     const nextErrors = validateSignUp(values)
     setErrors(nextErrors)
@@ -157,15 +208,77 @@ export function SignUpForm() {
         onChange={(value) => setField("email", value)}
       />
 
-      <FormField
-        id="sign-up-photo"
-        label="Photo (URL)"
-        type="url"
-        placeholder="https://example.com/photo.jpg"
-        value={values.photo}
-        error={errors.photo}
-        onChange={(value) => setField("photo", value)}
-      />
+      {/* Profile photo: picked from the device and hosted on ImgBB */}
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="sign-up-photo" className="text-xs font-bold text-white">
+          Profile Photo
+        </Label>
+
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#44342d] p-2.5">
+          <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/30 text-sm font-bold text-white ring-1 ring-white/10">
+            {values.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={values.photo}
+                alt="Profile photo preview"
+                className="size-full object-cover"
+              />
+            ) : (
+              <User className="size-5 text-neutral-400" />
+            )}
+          </span>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <label
+              htmlFor="sign-up-photo"
+              className={cn(
+                "inline-flex w-fit cursor-pointer items-center gap-1.5 text-sm font-semibold text-brand hover:underline",
+                photoUploading && "pointer-events-none opacity-60"
+              )}
+            >
+              {photoUploading ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Upload className="size-3.5" />
+              )}
+              {photoUploading
+                ? "Uploading…"
+                : values.photo
+                  ? "Change photo"
+                  : "Choose a photo"}
+            </label>
+            <p className="truncate text-[11px] text-neutral-400">
+              {values.photo
+                ? "Hosted on ImgBB"
+                : "JPG, PNG or WEBP · up to 10 MB, picked from your device"}
+            </p>
+          </div>
+
+          {values.photo && !photoUploading ? (
+            <button
+              type="button"
+              onClick={handlePhotoRemove}
+              aria-label="Remove profile photo"
+              className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-white/10 text-neutral-400 transition hover:border-red-400/40 hover:text-red-400"
+            >
+              <Trash2 className="size-4" />
+            </button>
+          ) : null}
+        </div>
+
+        <input
+          id="sign-up-photo"
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoChange}
+          disabled={photoUploading}
+          className="sr-only"
+        />
+
+        {errors.photo && !photoUploading ? (
+          <p className="text-xs text-red-400">{errors.photo}</p>
+        ) : null}
+      </div>
 
       <FormField
         id="sign-up-password"

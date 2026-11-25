@@ -18,6 +18,8 @@ const payments = db.collection("payments")
  * in the URL. The booking list page shows a success toast.
  */
 async function verifyAndRedirect(sessionId: string, userEmail: string) {
+  let target = "/dashboard/customer/my-booking?payment=failed"
+
   try {
     const stripeSession = await stripe.checkout.sessions.retrieve(sessionId)
 
@@ -26,55 +28,65 @@ async function verifyAndRedirect(sessionId: string, userEmail: string) {
       stripeSession.metadata?.userEmail !== userEmail
     ) {
       // Payment didn't go through or belongs to someone else — go to bookings
-      return redirect("/dashboard/customer/my-booking?payment=failed")
-    }
+      target = "/dashboard/customer/my-booking?payment=failed"
+    } else {
+      const bookingId = stripeSession.metadata?.bookingId ?? ""
+      const paymentIntentId =
+        typeof stripeSession.payment_intent === "string"
+          ? stripeSession.payment_intent
+          : (stripeSession.payment_intent?.id ?? "")
 
-    const bookingId = stripeSession.metadata?.bookingId ?? ""
-    const paymentIntentId =
-      typeof stripeSession.payment_intent === "string"
-        ? stripeSession.payment_intent
-        : (stripeSession.payment_intent?.id ?? "")
+      // Mark the booking as paid (idempotent)
+      if (bookingId && ObjectId.isValid(bookingId)) {
+        const result = await bookings.updateOne(
+          { _id: new ObjectId(bookingId) },
+          {
+            $set: {
+              status: "confirmed",
+              paymentStatus: "paid",
+              stripeSessionId: sessionId,
+              paymentIntentId,
+              paidAt: new Date(),
+            },
+          }
+        )
+        if (result.matchedCount === 0) {
+          console.error(`Payment verified but booking ${bookingId} was not found`)
+        }
+      }
 
-    // Mark the booking as paid (idempotent)
-    if (bookingId && ObjectId.isValid(bookingId)) {
-      await bookings.updateOne(
-        { _id: new ObjectId(bookingId) },
+      // Record the payment (idempotent). amount is stored in taka — the same
+      // unit as bookings.totalAmount — while Stripe reports amount_total in
+      // the currency's minor unit (paisa).
+      await payments.updateOne(
+        { stripeSessionId: sessionId },
         {
-          $set: {
-            status: "confirmed",
-            paymentStatus: "paid",
+          $setOnInsert: {
             stripeSessionId: sessionId,
             paymentIntentId,
-            paidAt: new Date(),
+            bookingId,
+            equipmentId: stripeSession.metadata?.equipmentId ?? "",
+            userEmail,
+            amount: Math.round((stripeSession.amount_total ?? 0) / 100),
+            currency: stripeSession.currency ?? "bdt",
+            status: "paid",
+            createdAt: new Date(),
           },
-        }
-      )
-    }
-
-    // Record the payment (idempotent)
-    await payments.updateOne(
-      { stripeSessionId: sessionId },
-      {
-        $setOnInsert: {
-          stripeSessionId: sessionId,
-          paymentIntentId,
-          bookingId,
-          equipmentId: stripeSession.metadata?.equipmentId ?? "",
-          userEmail,
-          amount: stripeSession.amount_total ?? 0,
-          currency: stripeSession.currency ?? "bdt",
-          status: "paid",
-          createdAt: new Date(),
         },
-      },
-      { upsert: true }
-    )
+        { upsert: true }
+      )
 
-    return redirect("/dashboard/customer/my-booking?payment=success")
+      target = "/dashboard/customer/my-booking?payment=success"
+    }
   } catch (error) {
     console.error("Payment verification failed:", error)
-    return redirect("/dashboard/customer/my-booking?payment=failed")
+    target = "/dashboard/customer/my-booking?payment=failed"
   }
+
+  // redirect() throws Next's control-flow error, so it has to stay outside the
+  // try/catch above — catching it would turn every successful payment into
+  // a "could not be verified" failure.
+  redirect(target)
 }
 
 const PaymentSuccessPage = async ({

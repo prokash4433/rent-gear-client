@@ -131,9 +131,25 @@ export default async function OwnerDashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
       {/* ---------- Welcome banner ---------- */}
-      <section className="relative overflow-hidden rounded-2xl bg-[#38261e] p-6 text-white shadow-sm sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full bg-brand/20 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-20 left-1/3 size-40 rounded-full bg-brand/10 blur-2xl" />
+      <section className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[linear-gradient(135deg,#1c1c1c_0%,#141414_55%,#0e0e0e_100%)] p-6 text-white shadow-[0_8px_30px_rgba(0,0,0,0.35)] sm:p-8">
+        {/* Soft amber glow - top right */}
+        <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-brand/25 blur-3xl" />
+        {/* Soft amber glow - bottom center */}
+        <div className="pointer-events-none absolute -bottom-28 left-1/3 size-56 rounded-full bg-brand/10 blur-3xl" />
+
+        {/* Subtle dot grid pattern */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.07] [mask-image:radial-gradient(ellipse_at_top_right,black,transparent_70%)]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, #ffffff 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
+          }}
+        />
+
+        {/* Subtle top highlight line */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-brand">
@@ -147,6 +163,7 @@ export default async function OwnerDashboardPage() {
               earnings.
             </p>
           </div>
+
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button
               render={<Link href="/dashboard/owner/add-equipment" />}

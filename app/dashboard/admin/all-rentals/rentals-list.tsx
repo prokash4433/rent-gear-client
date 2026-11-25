@@ -128,6 +128,7 @@ export default function AdminRentalsList({
       item.renterName.toLowerCase().includes(q) ||
       item.renterEmail.toLowerCase().includes(q) ||
       item.id.toLowerCase().includes(q) ||
+      (item.ownerEmail && item.ownerEmail.toLowerCase().includes(q)) ||
       (item.ownerId && item.ownerId.toLowerCase().includes(q)) ||
       (item.deliveryAddress && item.deliveryAddress.toLowerCase().includes(q))
 
@@ -435,11 +436,15 @@ export default function AdminRentalsList({
                       <p className="text-xs text-muted-foreground">
                         <span className="font-semibold text-foreground">Renter:</span>{" "}
                         {rental.renterName} ({rental.renterEmail})
-                        {rental.ownerId && (
+                        {rental.ownerEmail ? (
+                          <span className="ml-2 text-muted-foreground">
+                            • Owner: {rental.ownerEmail}
+                          </span>
+                        ) : rental.ownerId ? (
                           <span className="ml-2 font-mono text-muted-foreground">
                             • Owner ID: {rental.ownerId.slice(0, 14)}...
                           </span>
-                        )}
+                        ) : null}
                       </p>
 
                       {/* Dates & Quantity */}

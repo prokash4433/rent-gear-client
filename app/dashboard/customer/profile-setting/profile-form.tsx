@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import Image from "next/image"
+import { useState } from "react"
 import {
           User,
           Mail,
@@ -17,65 +16,102 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/toast"
-import { useSession } from "@/lib/auth-client"
+import { UserAvatar } from "@/app/_components/dashboard/User-Avatar"
+import { authClient, useSession } from "@/lib/auth-client"
+import { uploadToImageBB } from "@/lib/imagebb"
 
-const DEFAULT_AVATAR =
-          "https://images.unsplash.com/photo-1511367461989-f85a21fda167?auto=format&fit=crop&w=400&q=80"
+/** Editable fields — kept separate from the session so cleared inputs stay cleared. */
+type ProfileDraft = Partial<{
+          name: string
+          phone: string
+          avatar: string
+          address: string
+}>
 
 export default function CustomerProfileForm() {
-          const { data: session } = useSession()
+          const { data: session, refetch } = useSession()
 
-          const [formValues, setFormValues] = useState({
-                    name: "",
-                    email: "",
-                    phone: "",
-                    avatar: DEFAULT_AVATAR,
-                    address: "",
-          })
+          // Local edits layered over the session user: the form fills itself in
+          // as soon as the session arrives, without an effect.
+          const [draft, setDraft] = useState<ProfileDraft>({})
 
           const [isSaving, setIsSaving] = useState(false)
+          const [isUploading, setIsUploading] = useState(false)
 
-          // Session load hoye gele real user data form e boshiye dey
-          useEffect(() => {
-                    if (!session?.user) return
-                    setFormValues((prev) => ({
-                              ...prev,
-                              name: session.user.name || prev.name,
-                              email: session.user.email || prev.email,
-                              avatar: session.user.image || prev.avatar,
-                    }))
-          }, [session])
+          const user = session?.user
+          const formValues = {
+                    name: draft.name ?? user?.name ?? "",
+                    email: user?.email ?? "",
+                    phone: draft.phone ?? user?.phone ?? "",
+                    avatar: draft.avatar ?? user?.image ?? "",
+                    address: draft.address ?? user?.address ?? "",
+          }
 
-          function handleChange(field: keyof typeof formValues, value: string) {
-                    setFormValues((prev) => ({ ...prev, [field]: value }))
+          function handleChange(field: keyof ProfileDraft, value: string) {
+                    setDraft((prev) => ({ ...prev, [field]: value }))
+          }
+
+          // Device theke photo niye ImgBB te (FormData + POST) upload kore public URL pay.
+          async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+                    const file = e.target.files?.[0]
+                    e.target.value = ""
+                    if (!file) return
+
+                    setIsUploading(true)
+                    try {
+                              const url = await uploadToImageBB(file)
+                              handleChange("avatar", url)
+                              toast.add({
+                                        type: "success",
+                                        title: "Photo uploaded",
+                                        description: "Hosted on ImgBB. Click Save Changes to apply it.",
+                              })
+                    } catch (err) {
+                              toast.add({
+                                        type: "error",
+                                        title: "Upload failed",
+                                        description:
+                                                  err instanceof Error
+                                                            ? err.message
+                                                            : "Could not upload the photo. Please try again.",
+                                        timeout: 7000,
+                              })
+                    } finally {
+                              setIsUploading(false)
+                    }
           }
 
           async function handleSave(e: React.FormEvent) {
                     e.preventDefault()
                     setIsSaving(true)
 
-                    // TODO: ekhane real API call (update profile) boshao
-                    await new Promise((r) => setTimeout(r, 600))
+                    const { error } = await authClient.updateUser({
+                              name: formValues.name.trim(),
+                              image: formValues.avatar.trim(),
+                              phone: formValues.phone.trim(),
+                              address: formValues.address.trim(),
+                    })
+
                     setIsSaving(false)
+
+                    if (error) {
+                              toast.add({
+                                        type: "error",
+                                        title: "Could not save profile",
+                                        description: error.message || "Something went wrong. Please try again.",
+                                        timeout: 7000,
+                              })
+                              return
+                    }
+
+                    // Session e notun data ene navbar/sidebar avabe dekhay.
+                    await refetch()
 
                     toast.add({
                               type: "success",
                               title: "Profile updated",
                               description: "Your profile and delivery details have been saved.",
                     })
-          }
-
-          function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                              const tempUrl = URL.createObjectURL(file)
-                              handleChange("avatar", tempUrl)
-                              toast.add({
-                                        type: "success",
-                                        title: "Photo selected",
-                                        description: "Preview ready. Click Save to apply.",
-                              })
-                    }
           }
 
           const displayName = formValues.name || "Your name"
@@ -97,24 +133,26 @@ export default function CustomerProfileForm() {
                                         <form onSubmit={handleSave} className="flex flex-col gap-8">
                                                   {/* Profile identity block */}
                                                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                                            <div className="group relative size-24 shrink-0 overflow-hidden rounded-full border-4 border-brand/80 shadow-md">
-                                                                      <Image
-                                                                                src={formValues.avatar || DEFAULT_AVATAR}
-                                                                                alt={displayName}
-                                                                                fill
-                                                                                sizes="96px"
-                                                                                className="object-cover"
-                                                                                unoptimized
+                                                            <div className="group relative size-24 shrink-0">
+                                                                      <UserAvatar
+                                                                                src={formValues.avatar || null}
+                                                                                name={displayName}
+                                                                                className="size-24 text-xl ring-4 ring-brand/80 shadow-md"
                                                                       />
                                                                       <label
-                                                                                className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"
+                                                                                className={isUploading ? "absolute inset-0 flex cursor-wait items-center justify-center bg-black/60" : "absolute inset-0 flex cursor-pointer items-center justify-center bg-black/50 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100"}
                                                                                 aria-label="Upload profile photo"
                                                                       >
-                                                                                <Upload className="size-5 text-white" />
+                                                                                {isUploading ? (
+                                                                                          <Loader2 className="size-5 animate-spin text-white" />
+                                                                                ) : (
+                                                                                          <Upload className="size-5 text-white" />
+                                                                                )}
                                                                                 <input
                                                                                           type="file"
                                                                                           accept="image/*"
                                                                                           onChange={handleImageUpload}
+                                                                                          disabled={isUploading}
                                                                                           className="sr-only"
                                                                                 />
                                                                       </label>
@@ -168,7 +206,7 @@ export default function CustomerProfileForm() {
                                                                                 />
                                                                       </div>
                                                                       <p className="text-[11px] text-muted-foreground">
-                                                                                This is your login email and can't be changed here.
+                                                                                This is your login email and cannot be changed here.
                                                                       </p>
                                                             </div>
 
@@ -204,12 +242,12 @@ export default function CustomerProfileForm() {
                                                                                           id="customer-avatar-url"
                                                                                           value={formValues.avatar}
                                                                                           onChange={(e) => handleChange("avatar", e.target.value)}
-                                                                                          placeholder="https://..."
+                                                                                          placeholder="https://i.ibb.co/…"
                                                                                           className="h-11 rounded-xl pl-10 text-sm shadow-2xs"
                                                                                 />
                                                                       </div>
                                                                       <p className="text-[11px] text-muted-foreground">
-                                                                                Upload a photo above and the link is filled in for you.
+                                                                                Upload a photo above and the ImgBB link is filled in for you.
                                                                       </p>
                                                             </div>
 
@@ -235,7 +273,7 @@ export default function CustomerProfileForm() {
                                                   <div className="flex justify-end pt-2">
                                                             <Button
                                                                       type="submit"
-                                                                      disabled={isSaving}
+                                                                      disabled={isSaving || isUploading}
                                                                       className="h-11 rounded-xl bg-brand px-6 text-sm font-bold text-neutral-900 shadow-md transition-all hover:bg-brand-hover hover:scale-105 active:scale-95"
                                                             >
                                                                       {isSaving ? (

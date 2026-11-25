@@ -5,143 +5,50 @@ import { headers } from "next/headers"
 import { ObjectId } from "mongodb"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { rentalDays } from "@/lib/bookings"
 import type { RentalItem, RentalStatus } from "@/lib/types"
 
 const bookingsCollection = db.collection("bookings")
+const equipmentsCollection = db.collection("equipments")
+
+/** Bookings store no image — the equipment record holds it (list or newline text). */
+function firstImage(source: unknown): string | undefined {
+  if (Array.isArray(source) && typeof source[0] === "string") {
+    return source[0]
+  }
+  if (typeof source === "string" && source.trim()) {
+    return source.split("\n")[0].trim()
+  }
+  return undefined
+}
+
+/** Duration label built from the booking's own rentalType/periods fields. */
+function buildDurationText(doc: Record<string, unknown>): string {
+  if (doc.durationText) return String(doc.durationText)
+
+  const periods = Number(doc.periods ?? 0)
+  if (periods > 0) {
+    const type = String(doc.rentalType ?? "Daily").toLowerCase()
+    const unit = type.startsWith("week") ? "week" : type.startsWith("month") ? "month" : "day"
+    return `${periods} ${unit}${periods === 1 ? "" : "s"}`
+  }
+
+  const days = rentalDays(String(doc.startDate ?? ""), String(doc.endDate ?? ""))
+  return days > 0 ? `${days} day${days === 1 ? "" : "s"}` : "Rental"
+}
 
 /**
- * Seed samples if database bookings are empty so the admin has rich demo data
- * matching the user's reference dashboard screenshot.
+ * Reads every booking document from the server and maps it to the shape the
+ * rentals UI renders. Equipment images are resolved from the equipment record.
  */
-const fallbackRentals: RentalItem[] = [
-  {
-    id: "6b029ea98b655b0c13a3eb40",
-    equipmentName: "Canon DSLR Camera",
-    equipmentImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80",
-    renterName: "Sabid Ahmed",
-    renterEmail: "sabidahmed188519@gmail.com",
-    ownerId: "6af75ad453440aee8e06ae01",
-    ownerEmail: "owner@rentgear.com",
-    startDate: "2026-11-30",
-    endDate: "2026-12-01",
-    durationText: "2 days",
-    quantity: 1,
-    totalAmount: 100,
-    paymentStatus: "paid",
-    status: "confirmed",
-    deliveryAddress: "Consequatur minima t",
-    contactNumber: "+1 (793) 864-5489",
-    createdAt: "2026-11-22T10:00:00.000Z",
-  },
-  {
-    id: "6b025e6c6a534d975219032d",
-    equipmentName: "Canon DSLR Camera",
-    equipmentImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=400&q=80",
-    renterName: "Voluptas esse quia",
-    renterEmail: "duxisic@mailinator.com",
-    ownerId: "6af75ad453440aee8e06ae01",
-    ownerEmail: "owner@rentgear.com",
-    startDate: "2026-11-24",
-    endDate: "2026-11-25",
-    durationText: "2 days",
-    quantity: 1,
-    totalAmount: 100,
-    paymentStatus: "paid",
-    status: "confirmed",
-    deliveryAddress: "Optio doloribus exc",
-    contactNumber: "+1 (563) 207-4613",
-    createdAt: "2026-11-22T08:30:00.000Z",
-  },
-  {
-    id: "6b020c17c1feaf331de13b7e",
-    equipmentName: "Atque Nam voluptas s",
-    equipmentImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
-    renterName: "Nulla possimus ut a",
-    renterEmail: "coxojihu@mailinator.com",
-    ownerId: "6af75ad453440aee8e06ae01",
-    ownerEmail: "cleaner@rentgear.com",
-    startDate: "2027-01-29",
-    endDate: "2027-05-24",
-    durationText: "17 weeks",
-    quantity: 3,
-    totalAmount: 1683,
-    paymentStatus: "paid",
-    status: "confirmed",
-    deliveryAddress: "Aut nesciunt aliqui",
-    contactNumber: "+1 (743) 842-7011",
-    createdAt: "2026-11-22T06:15:00.000Z",
-  },
-  {
-    id: "6b01fa882cb75e330f81ae21",
-    equipmentName: "Generator 5kW",
-    equipmentImage: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=400&q=80",
-    renterName: "Voluptas esse quia",
-    renterEmail: "duxisic@mailinator.com",
-    ownerId: "6af75ad453440aee8e06ae01",
-    ownerEmail: "power@rentgear.com",
-    startDate: "2026-12-05",
-    endDate: "2026-12-08",
-    durationText: "3 days",
-    quantity: 1,
-    totalAmount: 160,
-    paymentStatus: "paid",
-    status: "pending",
-    deliveryAddress: "Dhaka Central Park",
-    contactNumber: "+880 1712-345678",
-    createdAt: "2026-11-22T04:00:00.000Z",
-  },
-  {
-    id: "6b01ec291ba44a229e71ab09",
-    equipmentName: "Concrete Mixer",
-    equipmentImage: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80",
-    renterName: "Construction Pro Ltd",
-    renterEmail: "builder@buildcorp.com",
-    ownerId: "6af84565d4d872efb36371c9",
-    ownerEmail: "heavy@rentgear.com",
-    startDate: "2026-12-10",
-    endDate: "2026-12-20",
-    durationText: "10 days",
-    quantity: 2,
-    totalAmount: 1800,
-    paymentStatus: "paid",
-    status: "confirmed",
-    deliveryAddress: "Sector 11, Uttara, Dhaka",
-    contactNumber: "+880 1819-987654",
-    createdAt: "2026-11-21T18:20:00.000Z",
-  },
-  {
-    id: "6b01d9124cb11a118d60ac33",
-    equipmentName: "Camping Tent",
-    equipmentImage: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=400&q=80",
-    renterName: "Adventure Club",
-    renterEmail: "traveler@wanderlust.com",
-    ownerId: "6af84565d4d872efb36371c9",
-    ownerEmail: "camp@rentgear.com",
-    startDate: "2026-12-25",
-    endDate: "2026-12-28",
-    durationText: "3 days",
-    quantity: 4,
-    totalAmount: 360,
-    paymentStatus: "unpaid",
-    status: "cancelled",
-    deliveryAddress: "Sylhet Tea Garden Trail",
-    contactNumber: "+880 1912-112233",
-    createdAt: "2026-11-21T14:10:00.000Z",
-  },
-]
-
 export async function getAllRentals(): Promise<RentalItem[]> {
   try {
     const rawBookings = await bookingsCollection.find({}).sort({ createdAt: -1 }).toArray()
 
-    if (rawBookings.length === 0) {
-      // Seed default sample data so the admin view is ready immediately
-      return fallbackRentals
-    }
-
     const items: RentalItem[] = rawBookings.map((doc, index) => {
+      const record = doc as Record<string, unknown>
       const id = doc._id ? doc._id.toString() : String(doc.id ?? `booking-${index}`)
-      
+
       let createdAtStr = new Date().toISOString()
       if (doc.createdAt) {
         if (doc.createdAt instanceof Date) {
@@ -151,6 +58,7 @@ export async function getAllRentals(): Promise<RentalItem[]> {
         }
       }
 
+      // Checkout writes status "unpaid" — until it is paid it reads as "pending".
       let status: RentalStatus = "pending"
       if (
         doc.status === "confirmed" ||
@@ -159,7 +67,9 @@ export async function getAllRentals(): Promise<RentalItem[]> {
         doc.status === "completed"
       ) {
         status = doc.status
-      } else if (doc.paymentStatus === "paid" || doc.status === "paid") {
+      } else if (doc.status === "paid") {
+        status = "confirmed"
+      } else if (doc.paymentStatus === "paid") {
         status = "confirmed"
       }
 
@@ -174,7 +84,7 @@ export async function getAllRentals(): Promise<RentalItem[]> {
         renterEmail: String(doc.userEmail ?? ""),
         startDate: String(doc.startDate ?? ""),
         endDate: String(doc.endDate ?? ""),
-        durationText: doc.durationText ? String(doc.durationText) : `${doc.periods ?? 1} period(s)`,
+        durationText: buildDurationText(record),
         quantity: Number(doc.quantity ?? 1),
         totalAmount: Number(doc.totalAmount ?? 0),
         paymentStatus: doc.paymentStatus === "paid" ? "paid" : "unpaid",
@@ -186,10 +96,39 @@ export async function getAllRentals(): Promise<RentalItem[]> {
       }
     })
 
+    // Attach the current equipment image to every booking that has none.
+    const equipmentIds = [
+      ...new Set(
+        items
+          .map((item) => item.equipmentId)
+          .filter((equipmentId): equipmentId is string => Boolean(equipmentId))
+      ),
+    ].filter((equipmentId) => ObjectId.isValid(equipmentId))
+
+    if (equipmentIds.length > 0) {
+      const equipmentDocs = await equipmentsCollection
+        .find({ _id: { $in: equipmentIds.map((equipmentId) => new ObjectId(equipmentId)) } })
+        .project({ imageUrls: 1, photos: 1 })
+        .toArray()
+
+      const imageById = new Map<string, string>()
+      for (const equipmentDoc of equipmentDocs) {
+        const image =
+          firstImage(equipmentDoc.imageUrls) ?? firstImage(equipmentDoc.photos)
+        if (image) imageById.set(String(equipmentDoc._id), image)
+      }
+
+      for (const item of items) {
+        if (item.equipmentImage || !item.equipmentId) continue
+        const image = imageById.get(item.equipmentId)
+        if (image) item.equipmentImage = image
+      }
+    }
+
     return items
   } catch (error) {
     console.error("Failed to query bookings collection:", error)
-    return fallbackRentals
+    return []
   }
 }
 

@@ -4,6 +4,8 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 
 // User-er image dekhay; image na thakle ba broken hole initials dekhay.
+// Which URL failed is remembered (not just "something failed"), so a freshly
+// uploaded ImgBB avatar always renders even if an earlier one was broken.
 export function UserAvatar({
           src,
           name,
@@ -13,7 +15,7 @@ export function UserAvatar({
           name?: string | null
           className?: string
 }) {
-          const [failed, setFailed] = useState(false)
+          const [failedSrc, setFailedSrc] = useState<string | null>(null)
           const initials =
                     (name ?? "U")
                               .split(" ")
@@ -22,6 +24,8 @@ export function UserAvatar({
                               .map((w) => w[0]?.toUpperCase())
                               .join("") || "U"
 
+          const showImage = Boolean(src) && failedSrc !== src
+
           return (
                     <span
                               className={cn(
@@ -29,13 +33,13 @@ export function UserAvatar({
                                         className
                               )}
                     >
-                              {src && !failed ? (
+                              {showImage ? (
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img
-                                                  src={src}
+                                                  src={src as string}
                                                   alt={name ?? "User"}
                                                   className="size-full object-cover"
-                                                  onError={() => setFailed(true)}
+                                                  onError={() => setFailedSrc(src ?? null)}
                                         />
                               ) : (
                                         initials

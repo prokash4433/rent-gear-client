@@ -1,7 +1,7 @@
 'use client'
 import Link from "next/link";
-import { FaFacebookF, FaYoutube, FaLinkedinIn, FaInstagram, FaWrench } from "react-icons/fa";
-import { GiGears } from "react-icons/gi";
+import { FaFacebookF, FaYoutube, FaLinkedinIn, FaInstagram } from "react-icons/fa";
+import { Logo } from "@/components/shared/Logo";
 
 const quickLinks = [
           { label: "Home", href: "/" },
@@ -52,19 +52,9 @@ const Footer = () => {
                                         <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
                                                   {/* Top section */}
                                                   <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-                                                            {/* Brand */}
+                                                            {/* Brand — navbar er ek-i logo (dark background er jonno tone="dark") */}
                                                             <div>
-                                                                      {/* Logo: click korle Home-e jabe */}
-                                                                      <Link href="/" className="inline-flex items-center gap-2">
-                                                                                <div className="relative">
-                                                                                          <GiGears className="text-5xl text-red-600" />
-                                                                                          <FaWrench className="absolute inset-0 m-auto text-white text-lg -rotate-45" />
-                                                                                </div>
-                                                                                <h2 className="text-3xl font-bold">
-                                                                                          <span className="text-yellow-400">Rent</span>{" "}
-                                                                                          <span className="text-white">Gear</span>
-                                                                                </h2>
-                                                                      </Link>
+                                                                      <Logo tone="dark" />
 
                                                                       <p className="mt-4 text-gray-300 text-sm leading-relaxed">
                                                                                 Your trusted platform for renting top-quality equipment.

@@ -18,6 +18,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import { Logo } from "@/components/shared/Logo"
 import { UserAvatar } from "@/app/_components/dashboard/User-Avatar"
+import { clearAccessToken } from "@/lib/api-client"
 import { cn } from "@/lib/utils"
 import type { NavLink } from "@/lib/types"
 import { useSession, signOut } from "@/lib/auth-client"
@@ -144,6 +145,9 @@ export function Navbar() {
         })
         return
       }
+
+      // Drop the cached API JWT so no request can reuse it after sign-out.
+      clearAccessToken()
 
       toast.add({
         type: "success",

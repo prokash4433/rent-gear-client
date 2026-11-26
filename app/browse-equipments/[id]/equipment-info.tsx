@@ -18,6 +18,7 @@ import {
           CardTitle,
 } from "@/components/ui/card"
 import { toast } from "@/components/ui/toast"
+import { apiFetch } from "@/lib/api-client"
 import { addFavourite, removeFavourite } from "@/lib/api/favourites"
 import type { EquipmentDocument } from "@/lib/types"
 import {
@@ -55,8 +56,9 @@ export function EquipmentInfo({ equipment, userEmail }: EquipmentInfoProps) {
           useEffect(() => {
                     if (!userEmail) return
                     let cancelled = false
-                    fetch(
-                              `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"}/favourites?userEmail=${encodeURIComponent(userEmail)}`,
+                    // Authenticated request — same wrapper the other calls use.
+                    apiFetch(
+                              `/favourites?userEmail=${encodeURIComponent(userEmail)}`,
                               { cache: "no-store" }
                     )
                               .then((res) => (res.ok ? res.json() : []))

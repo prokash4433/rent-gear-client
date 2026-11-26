@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { requireApiAdmin } from "@/lib/auth-guard"
 import { getAllAdminEquipments, updateEquipmentStatus, updateEquipment, deleteEquipment } from "@/lib/actions/equipments"
 import type { EquipmentStatus } from "@/lib/types"
 
@@ -7,6 +8,9 @@ import type { EquipmentStatus } from "@/lib/types"
  * Returns all equipment listings including pending, approved, and rejected.
  */
 export async function GET() {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const equipments = await getAllAdminEquipments()
     return NextResponse.json({ equipments })
@@ -21,6 +25,9 @@ export async function GET() {
  * Body: { equipmentId: string, status?: EquipmentStatus, rentalPrice?: string, quantity?: string, ... }
  */
 export async function PATCH(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const body = await req.json()
     const { equipmentId, status, rentalPrice, quantity } = body
@@ -54,6 +61,9 @@ export async function PATCH(req: Request) {
  * Query or body: ?equipmentId=xxx
  */
 export async function DELETE(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const { searchParams } = new URL(req.url)
     let equipmentId = searchParams.get("equipmentId")

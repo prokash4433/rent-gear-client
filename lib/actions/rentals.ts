@@ -11,6 +11,24 @@ import type { RentalItem, RentalStatus } from "@/lib/types"
 const bookingsCollection = db.collection("bookings")
 const equipmentsCollection = db.collection("equipments")
 
+/**
+ * Admins only — these functions expose or moderate *every* booking on the
+ * platform (owners see their own via `lib/data/owner`, renters via
+ * `cancelMyBooking` below which checks the booking's own email).
+ */
+async function requireAdmin(): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user?.email) {
+    return { ok: false, error: "Sign in required" }
+  }
+  if (String(session.user.role ?? "customer") !== "admin") {
+    return { ok: false, error: "Admins only" }
+  }
+  return { ok: true }
+}
+
 /** Bookings store no image — the equipment record holds it (list or newline text). */
 function firstImage(source: unknown): string | undefined {
   if (Array.isArray(source) && typeof source[0] === "string") {
@@ -42,6 +60,9 @@ function buildDurationText(doc: Record<string, unknown>): string {
  * rentals UI renders. Equipment images are resolved from the equipment record.
  */
 export async function getAllRentals(): Promise<RentalItem[]> {
+  const gate = await requireAdmin()
+  if (!gate.ok) throw new Error(gate.error)
+
   try {
     const rawBookings = await bookingsCollection.find({}).sort({ createdAt: -1 }).toArray()
 
@@ -133,6 +154,9 @@ export async function getAllRentals(): Promise<RentalItem[]> {
 }
 
 export async function updateRentalStatus(bookingId: string, status: RentalStatus) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+
   try {
     const filter = ObjectId.isValid(bookingId)
       ? { $or: [{ _id: new ObjectId(bookingId) }, { id: bookingId }] }
@@ -161,6 +185,9 @@ export async function updateRentalStatus(bookingId: string, status: RentalStatus
 }
 
 export async function deleteRental(bookingId: string) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return { success: false as const, error: gate.error }
+
   try {
     const filter = ObjectId.isValid(bookingId)
       ? { $or: [{ _id: new ObjectId(bookingId) }, { id: bookingId }] }

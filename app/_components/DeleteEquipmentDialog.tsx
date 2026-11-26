@@ -40,7 +40,10 @@ export function DeleteEquipmentDialog({
         toast.add({
           type: "error",
           title: "Could not delete listing",
-          description: `${equipment.name} was not found. Refresh the page and try again.`,
+          description:
+            "error" in res && res.error
+              ? res.error
+              : `${equipment.name} was not found. Refresh the page and try again.`,
         })
         return
       }

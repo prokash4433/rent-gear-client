@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { requireApiAdmin } from "@/lib/auth-guard"
 import { getAllRentals, updateRentalStatus, deleteRental } from "@/lib/actions/rentals"
 import type { RentalStatus } from "@/lib/types"
 
@@ -7,6 +8,9 @@ import type { RentalStatus } from "@/lib/types"
  * Returns all platform booking records.
  */
 export async function GET() {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const rentals = await getAllRentals()
     return NextResponse.json({ rentals })
@@ -21,6 +25,9 @@ export async function GET() {
  * Body: { bookingId: string, status: RentalStatus }
  */
 export async function PATCH(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const body = await req.json()
     const { bookingId, status } = body
@@ -46,6 +53,9 @@ export async function PATCH(req: Request) {
  * Query or body: ?bookingId=xxx
  */
 export async function DELETE(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const { searchParams } = new URL(req.url)
     let bookingId = searchParams.get("bookingId")

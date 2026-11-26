@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { toast } from "@/components/ui/toast"
+import { clearAccessToken } from "@/lib/api-client"
 import { signOut, useSession } from "@/lib/auth-client"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -87,6 +88,9 @@ export function DashboardSidebar() {
         })
         return
       }
+
+      // Drop the cached API JWT so no request can reuse it after sign-out.
+      clearAccessToken()
 
       toast.add({
         type: "success",

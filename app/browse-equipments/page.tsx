@@ -1,5 +1,7 @@
 import { BrowseFilters, SearchSortBar } from "./browse-controls"
 import { EquipmentResults } from "./equipment-results"
+import { requireSession } from "@/lib/auth-guard"
+import { getServerAccessToken } from "@/lib/server-token"
 import { getEquipments, normalizeEquipments } from "@/lib/api/equipments"
 
 /** Only these params are forwarded to the API. */
@@ -13,11 +15,20 @@ const filterParams = [
           "sort",
 ]
 
+/**
+ * Private, per-user page: rendered per request (the session check and the
+ * JWT for the API call both need the incoming request).
+ */
+export const dynamic = "force-dynamic"
+
 const BrowseEquipmentsPage = async ({
           searchParams,
 }: {
           searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) => {
+          // Private page: signed-out visitors never reach the listings.
+          await requireSession()
+
           const params = await searchParams
 
           // Build the API query string from the whitelisted params only.
@@ -34,7 +45,9 @@ const BrowseEquipmentsPage = async ({
           // (documents without a status field count as approved).
           query.set("status", "approved")
 
-          const raw = await getEquipments(query.toString())
+          // Server-side call to the Express API — send this request's JWT.
+          const token = await getServerAccessToken()
+          const raw = await getEquipments(query.toString(), token)
           const items = normalizeEquipments(raw)
 
           return (

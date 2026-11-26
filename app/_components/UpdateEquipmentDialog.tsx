@@ -61,7 +61,19 @@ const UpdateEquipmentDialog = ({
 
                     try {
                               setLoading(true)
-                              await updateEquipment(equipment.id, { rentalPrice, quantity })
+                              const res = await updateEquipment(equipment.id, { rentalPrice, quantity })
+
+                              if (!res.acknowledged) {
+                                        toast.add({
+                                                  type: "error",
+                                                  title: "Update failed",
+                                                  description:
+                                                            "error" in res && res.error
+                                                                      ? res.error
+                                                                      : `Could not update ${equipment.name}. Please try again.`,
+                                        })
+                                        return
+                              }
 
                               setOpen(false)
 

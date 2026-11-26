@@ -1,11 +1,16 @@
+import { apiFetch } from "@/lib/api-client"
 import type { FavouriteDocument } from "@/lib/types"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
+/**
+ * Favourites are renter-only on the API (`verifyRenter`), so these calls also
+ * require the signed-in user to be a customer — an owner/admin receives a 403
+ * which the callers already treat as "no favourites".
+ */
 
 /** All equipment one user has saved. */
 export const getFavourites = async (userEmail: string): Promise<FavouriteDocument[]> => {
-          const res = await fetch(
-                    `${BASE_URL}/favourites?userEmail=${encodeURIComponent(userEmail)}`,
+          const res = await apiFetch(
+                    `/favourites?userEmail=${encodeURIComponent(userEmail)}`,
                     { cache: "no-store" }
           )
           if (!res.ok) {
@@ -16,7 +21,7 @@ export const getFavourites = async (userEmail: string): Promise<FavouriteDocumen
 
 /** Save one equipment to the user's favourites. */
 export const addFavourite = async (equipmentId: string, userEmail: string) => {
-          const res = await fetch(`${BASE_URL}/favourites`, {
+          const res = await apiFetch(`/favourites`, {
                     method: "POST",
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ equipmentId, userEmail }),
@@ -29,7 +34,7 @@ export const addFavourite = async (equipmentId: string, userEmail: string) => {
 
 /** Remove one equipment from the user's favourites. */
 export const removeFavourite = async (equipmentId: string, userEmail: string) => {
-          const res = await fetch(`${BASE_URL}/favourites`, {
+          const res = await apiFetch(`/favourites`, {
                     method: "DELETE",
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({ equipmentId, userEmail }),

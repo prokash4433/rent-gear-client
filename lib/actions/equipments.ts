@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache"
 import { ObjectId } from "mongodb"
+import { apiFetch } from "@/lib/api-client"
+import { getSession } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
+import { getServerAccessToken } from "@/lib/server-token"
 import type {
   CreateEquipmentResult,
   EquipmentListItem,
@@ -10,7 +13,6 @@ import type {
   EquipmentStatus,
 } from "@/lib/types"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
 const equipmentsCollection = db.collection("equipments")
 
 /** Every route that renders equipment data, so a change shows up everywhere. */
@@ -21,6 +23,74 @@ function revalidateEquipmentPaths() {
   revalidatePath("/dashboard/owner/my-equipment")
   revalidatePath("/dashboard/owner/analytics")
   revalidatePath("/browse-equipments")
+}
+
+/**
+ * Authorization helpers — these run BEFORE any data is read or written.
+ *
+ * The Express API enforces the same rules behind the JWT
+ * (`middleware/verifyToken.js`), but these server actions can also talk to
+ * MongoDB directly, so they must never rely on the API alone.
+ */
+type GuardFailure = { ok: false; error: string }
+type SessionOf = NonNullable<Awaited<ReturnType<typeof getSession>>>
+/** `T` defaults to `unknown` (not `never`, which would collapse the type). */
+type GuardSuccess<T = unknown> = { ok: true; session: SessionOf } & T
+
+/** Signed in? Otherwise the mutation/read is refused. */
+async function requireSignedIn(): Promise<GuardSuccess | GuardFailure> {
+  const session = await getSession()
+  if (!session?.user?.email) {
+    return { ok: false, error: "Sign in required" }
+  }
+  return { ok: true, session }
+}
+
+/** Signed in with one of the given roles? Otherwise refused. */
+async function requireRole(
+  ...roles: string[]
+): Promise<GuardSuccess | GuardFailure> {
+  const gate = await requireSignedIn()
+  if (!gate.ok) return gate
+
+  const role = String(gate.session.user.role ?? "customer")
+  if (!roles.includes(role)) {
+    return { ok: false, error: "You are not allowed to perform this action" }
+  }
+  return gate
+}
+
+/** Loads a listing by id (ObjectId or legacy string id). */
+async function findEquipment(equipmentId: string) {
+  const filter = ObjectId.isValid(equipmentId)
+    ? { $or: [{ _id: new ObjectId(equipmentId) }, { id: equipmentId }] }
+    : { id: equipmentId }
+  return equipmentsCollection.findOne(filter)
+}
+
+/**
+ * Admins may touch any listing; everyone else only their own
+ * (matched on `ownerEmail`, the same rule the Express API applies).
+ */
+async function requireEquipmentManager(equipmentId: string): Promise<
+  GuardSuccess<{ equipment: NonNullable<Awaited<ReturnType<typeof findEquipment>>> }> | GuardFailure
+> {
+  const gate = await requireSignedIn()
+  if (!gate.ok) return gate
+
+  const equipment = await findEquipment(equipmentId)
+  if (!equipment) return { ok: false, error: "Equipment not found" }
+
+  const role = String(gate.session.user.role ?? "customer")
+  const ownerEmail = String(equipment.ownerEmail ?? "").trim().toLowerCase()
+  const isOwner =
+    ownerEmail !== "" &&
+    ownerEmail === String(gate.session.user.email).trim().toLowerCase()
+
+  if (role !== "admin" && !isOwner) {
+    return { ok: false, error: "You can only manage your own equipment" }
+  }
+  return { ok: true, session: gate.session, equipment }
 }
 
 /**
@@ -62,12 +132,17 @@ function normalizeDoc(item: Record<string, unknown>, index: number): EquipmentLi
 
 /**
  * Fetch all equipment listings for Admin review.
- * Tries the Express backend first, and falls back seamlessly to direct MongoDB access.
+ * Admin only — a non-admin caller gets an error instead of the data, and
+ * the same guard also protects the direct MongoDB fallback.
  */
 export async function getAllAdminEquipments(): Promise<EquipmentListItem[]> {
-  // 1. Try Express API
+  const gate = await requireRole("admin")
+  if (!gate.ok) throw new Error(gate.error)
+
+  // 1. Try Express API (with this request's JWT)
   try {
-    const res = await fetch(`${BASE_URL}/equipments`, { cache: "no-store" })
+    const token = await getServerAccessToken()
+    const res = await apiFetch("/equipments", { cache: "no-store" }, { token })
     if (res.ok) {
       const data = await res.json()
       if (Array.isArray(data)) {
@@ -78,7 +153,7 @@ export async function getAllAdminEquipments(): Promise<EquipmentListItem[]> {
     // Express API is not reachable; fall back directly to MongoDB
   }
 
-  // 2. Direct MongoDB fallback
+  // 2. Direct MongoDB fallback (already admin-checked above)
   try {
     const items = await equipmentsCollection.find({}).sort({ _id: -1 }).toArray()
     return items.map((item, index) => normalizeDoc(item, index))
@@ -88,18 +163,34 @@ export async function getAllAdminEquipments(): Promise<EquipmentListItem[]> {
   }
 }
 
+/**
+ * Create a listing. Owners only (the Express API requires the `owner` role),
+ * and `ownerEmail` is always taken from the session — never from the form —
+ * so a listing can never be attributed to someone else.
+ */
 export const createEquipment = async (
   data: EquipmentPayload
 ): Promise<CreateEquipmentResult> => {
-  // 1. Try Express API
+  const gate = await requireRole("owner")
+  if (!gate.ok) {
+    return { acknowledged: false, insertedId: "", error: gate.error }
+  }
+
+  const ownerEmail = String(gate.session.user.email)
+  const payload = { ...data, ownerEmail }
+
+  // 1. Try Express API (with this request's JWT)
   try {
-    const res = await fetch(`${BASE_URL}/equipments`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
+    const token = await getServerAccessToken()
+    const res = await apiFetch(
+      "/equipments",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(data),
-    })
+      { token }
+    )
 
     if (res.ok) {
       return res.json()
@@ -109,7 +200,7 @@ export const createEquipment = async (
   }
 
   const result = await equipmentsCollection.insertOne({
-    ...data,
+    ...payload,
     status: "pending",
     createdAt: new Date(),
   })
@@ -121,18 +212,28 @@ export const createEquipment = async (
 }
 
 /**
- * Delete an equipment listing by its ID.
+ * Delete an equipment listing by its ID — admin or the listed owner only.
  */
 export const deleteEquipment = async (equipmentId: string) => {
+  const gate = await requireEquipmentManager(equipmentId)
+  if (!gate.ok) {
+    return { acknowledged: false, deletedCount: 0, error: gate.error }
+  }
+
   let apiSucceeded = false
 
-  // 1. Try Express API
+  // 1. Try Express API (with this request's JWT)
   try {
-    const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ equipmentId }),
-    })
+    const token = await getServerAccessToken()
+    const res = await apiFetch(
+      `/equipments/${equipmentId}`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ equipmentId }),
+      },
+      { token }
+    )
     if (res.ok) {
       apiSucceeded = true
     }
@@ -140,7 +241,7 @@ export const deleteEquipment = async (equipmentId: string) => {
     // API down or error
   }
 
-  // 2. Direct MongoDB deletion
+  // 2. Direct MongoDB deletion (ownership already verified above)
   try {
     const filter = ObjectId.isValid(equipmentId)
       ? { $or: [{ _id: new ObjectId(equipmentId) }, { id: equipmentId }] }
@@ -163,21 +264,32 @@ export const deleteEquipment = async (equipmentId: string) => {
 }
 
 /**
- * Update equipment properties (price, quantity, name, etc.).
+ * Update equipment properties (price, quantity, name, etc.) —
+ * admin or the listed owner only.
  */
 export const updateEquipment = async (
   equipmentId: string,
   data: { rentalPrice: string; quantity: string } & Partial<EquipmentPayload>
 ) => {
+  const gate = await requireEquipmentManager(equipmentId)
+  if (!gate.ok) {
+    return { acknowledged: false, modifiedCount: 0, error: gate.error }
+  }
+
   let apiSucceeded = false
 
-  // 1. Try Express API
+  // 1. Try Express API (with this request's JWT)
   try {
-    const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
+    const token = await getServerAccessToken()
+    const res = await apiFetch(
+      `/equipments/${equipmentId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      },
+      { token }
+    )
     if (res.ok) {
       apiSucceeded = true
     }
@@ -185,7 +297,7 @@ export const updateEquipment = async (
     // API down or error
   }
 
-  // 2. Direct MongoDB update
+  // 2. Direct MongoDB update (ownership already verified above)
   try {
     const filter = ObjectId.isValid(equipmentId)
       ? { $or: [{ _id: new ObjectId(equipmentId) }, { id: equipmentId }] }
@@ -218,21 +330,32 @@ export const updateEquipment = async (
 }
 
 /**
- * Update an equipment's approval status (approved, rejected, pending).
+ * Update an equipment's approval status (approved, rejected, pending) —
+ * admins only, matching the Express PATCH rule.
  */
 export async function updateEquipmentStatus(
   equipmentId: string,
   status: EquipmentStatus
 ) {
+  const gate = await requireRole("admin")
+  if (!gate.ok) {
+    return { success: false as const, error: gate.error }
+  }
+
   let apiSucceeded = false
 
-  // 1. Try Express API
+  // 1. Try Express API (with this request's JWT)
   try {
-    const res = await fetch(`${BASE_URL}/equipments/${equipmentId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
+    const token = await getServerAccessToken()
+    const res = await apiFetch(
+      `/equipments/${equipmentId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+      { token }
+    )
     if (res.ok) {
       apiSucceeded = true
     }
@@ -240,7 +363,7 @@ export async function updateEquipmentStatus(
     // Express API down or error
   }
 
-  // 2. Direct MongoDB update
+  // 2. Direct MongoDB update (admin role already verified above)
   try {
     const filter = ObjectId.isValid(equipmentId)
       ? { $or: [{ _id: new ObjectId(equipmentId) }, { id: equipmentId }] }

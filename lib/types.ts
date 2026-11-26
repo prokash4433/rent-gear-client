@@ -131,6 +131,8 @@ export type EquipmentPayload = Omit<EquipmentFormValues, "imageUrls"> & {
 export type CreateEquipmentResult = {
   acknowledged: boolean
   insertedId: string
+  /** Present when the caller was not allowed to create the listing. */
+  error?: string
 }
 
 /* ---------- Owner: All Equipment table ---------- */

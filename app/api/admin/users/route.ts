@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { requireApiAdmin } from "@/lib/auth-guard"
 import { getAllUsers, updateUserRole, deleteUser, updateUserDetails } from "@/lib/actions/users"
 import type { UserRole } from "@/lib/types"
 
@@ -7,6 +8,9 @@ import type { UserRole } from "@/lib/types"
  * Returns list of registered users.
  */
 export async function GET() {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const users = await getAllUsers()
     return NextResponse.json({ users })
@@ -22,6 +26,9 @@ export async function GET() {
  * Body: { userId: string, role?: UserRole, name?: string, email?: string }
  */
 export async function PATCH(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const body = await req.json()
     const { userId, role, name, email } = body
@@ -56,6 +63,9 @@ export async function PATCH(req: Request) {
  * Body or query: ?userId=xxx
  */
 export async function DELETE(req: Request) {
+  const gate = await requireApiAdmin()
+  if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status })
+
   try {
     const { searchParams } = new URL(req.url)
     let userId = searchParams.get("userId")

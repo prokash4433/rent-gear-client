@@ -1,26 +1,47 @@
-import type { EquipmentDocument, EquipmentListItem, RawEquipment } from "@/lib/types";
+import { apiFetch } from "@/lib/api-client"
+import type { EquipmentDocument, EquipmentListItem, RawEquipment } from "@/lib/types"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000"
-
-export const getEquipments = async (query = ''): Promise<RawEquipment[]> =>{
-          const res = await fetch(`${BASE_URL}/equipments?${query}`, { cache: "no-store" });
-          return res.json();
+/**
+ * Every call is authenticated (JWT) — see `lib/api-client.ts`.
+ *
+ * `token` is required when these helpers run on the server (pass
+ * `await getServerAccessToken()`); in the browser it is resolved from the
+ * session automatically. A failed/forbidden request resolves to an empty
+ * list / null so a page never crashes.
+ */
+export const getEquipments = async (
+  query = "",
+  token?: string | null
+): Promise<RawEquipment[]> => {
+  try {
+    const res = await apiFetch(`/equipments?${query}`, { cache: "no-store" }, { token })
+    if (!res.ok) return []
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
 }
 
 /**
  * One equipment by id (details page). Returns null when the id is invalid
  * or nothing matched, so the page can show its not-found state.
  */
-export const getEquipmentById = async (id: string): Promise<EquipmentDocument | null> => {
-          try {
-                    const res = await fetch(`${BASE_URL}/equipments/${encodeURIComponent(id)}`, {
-                              cache: "no-store",
-                    })
-                    if (!res.ok) return null
-                    return res.json()
-          } catch {
-                    return null
-          }
+export const getEquipmentById = async (
+  id: string,
+  token?: string | null
+): Promise<EquipmentDocument | null> => {
+  try {
+    const res = await apiFetch(
+      `/equipments/${encodeURIComponent(id)}`,
+      { cache: "no-store" },
+      { token }
+    )
+    if (!res.ok) return null
+    return res.json()
+  } catch {
+    return null
+  }
 }
 
 /**

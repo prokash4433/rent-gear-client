@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { FormEvent } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -18,6 +19,7 @@ const SUCCESS_TIMEOUT = 6000
 const ERROR_TIMEOUT = 7000
 
 export function SignInForm() {
+  const router = useRouter()
   const [values, setValues] = useState<SignInFormValues>({
     email: "",
     password: "",
@@ -29,6 +31,16 @@ export function SignInForm() {
   function setField(field: keyof SignInFormValues, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }))
     setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }
+
+  // Where to go after signing in: the ?next= added by the route guard
+  // (open-redirect safe — only same-site paths are honoured), else home.
+  function nextDestination() {
+    const next = new URLSearchParams(window.location.search).get("next")
+    if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")) {
+      return next
+    }
+    return "/"
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -57,7 +69,6 @@ export function SignInForm() {
         rememberMe: true,
         callbackURL: "/",
       })
-
       if (error) {
         toast.add({
           type: "error",
@@ -76,6 +87,9 @@ export function SignInForm() {
         description: "Welcome back to Rent Gear!",
         timeout: SUCCESS_TIMEOUT,
       })
+
+      // Continue to the page that sent us here (or home).
+      router.push(nextDestination())
     } catch {
       toast.add({
         type: "error",
@@ -92,6 +106,7 @@ export function SignInForm() {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
+        callbackURL: nextDestination(),
       })
 
       if (error) {

@@ -1,12 +1,18 @@
-import { headers } from "next/headers"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
+import { requireSession } from "@/lib/auth-guard"
+import { getServerAccessToken } from "@/lib/server-token"
 import { getEquipmentById } from "@/lib/api/equipments"
-import { auth } from "@/lib/auth"
 import { BookingCard } from "./booking-card"
 import { EquipmentInfo } from "./equipment-info"
+
+/**
+ * Private, per-user page: rendered per request so the session check and
+ * the API JWT always come from the incoming request.
+ */
+export const dynamic = "force-dynamic"
 
 /**
  * Equipment details — a private page. Anyone who is not signed in
@@ -19,13 +25,14 @@ const EquipmentDetailsPage = async ({
           params: Promise<{ id: string }>
           searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) => {
-          const session = await auth.api.getSession({ headers: await headers() })
-          if (!session) redirect("/sign-in")
+          const session = await requireSession()
 
           const { id } = await params
           const query = await searchParams
 
-          const equipment = await getEquipmentById(id)
+          // Server-side call to the Express API — send this request's JWT.
+          const token = await getServerAccessToken()
+          const equipment = await getEquipmentById(id, token)
           if (!equipment) notFound()
 
           // The public page only shows approved listings

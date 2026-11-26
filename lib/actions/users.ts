@@ -2,10 +2,27 @@
 
 import { revalidatePath } from "next/cache"
 import { ObjectId } from "mongodb"
+import { getSession } from "@/lib/auth-guard"
 import { db } from "@/lib/db"
 import type { AdminUser, UserRole } from "@/lib/types"
 
 const usersCollection = db.collection("user")
+
+/**
+ * Admins only — every function in this file reads or mutates user accounts,
+ * so the session role is checked here (not only on the admin pages) to stop
+ * direct server-action calls from other roles.
+ */
+async function requireAdmin(): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await getSession()
+  if (!session?.user?.email) {
+    return { ok: false, error: "Sign in required" }
+  }
+  if (String(session.user.role ?? "customer") !== "admin") {
+    return { ok: false, error: "Admins only" }
+  }
+  return { ok: true }
+}
 
 /** Maps one user document to the shape the admin UI renders. */
 function mapUserDoc(user: Record<string, unknown>, index: number): AdminUser {
@@ -54,6 +71,9 @@ function mapUserDoc(user: Record<string, unknown>, index: number): AdminUser {
  * Serializes all fields so they can be safely passed to client components.
  */
 export async function getAllUsers(): Promise<AdminUser[]> {
+  const gate = await requireAdmin()
+  if (!gate.ok) throw new Error(gate.error)
+
   try {
     const rawUsers = await usersCollection.find({}).sort({ createdAt: -1 }).toArray()
 
@@ -68,6 +88,9 @@ export async function getAllUsers(): Promise<AdminUser[]> {
 
 /** Fetch a single user by their id (used by the Manage User page). */
 export async function getUserById(userId: string): Promise<AdminUser | null> {
+  const gate = await requireAdmin()
+  if (!gate.ok) throw new Error(gate.error)
+
   try {
     const filter = ObjectId.isValid(userId)
       ? { _id: new ObjectId(userId) }
@@ -87,6 +110,9 @@ export async function getUserById(userId: string): Promise<AdminUser | null> {
  * Change a user's role (Customer, Owner, Admin).
  */
 export async function updateUserRole(userId: string, newRole: UserRole) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return { success: false, error: gate.error }
+
   try {
     if (!["customer", "owner", "admin"].includes(newRole)) {
       return { success: false, error: "Invalid role specified" }
@@ -119,6 +145,9 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
  * Delete a user from the database. Also cleans up their active sessions.
  */
 export async function deleteUser(userId: string) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return { success: false, error: gate.error }
+
   try {
     const filter = ObjectId.isValid(userId)
       ? { $or: [{ _id: new ObjectId(userId) }, { id: userId }] }
@@ -158,6 +187,9 @@ export async function updateUserDetails(
   userId: string,
   data: { name?: string; email?: string; role?: UserRole }
 ) {
+  const gate = await requireAdmin()
+  if (!gate.ok) return { success: false, error: gate.error }
+
   try {
     const filter = ObjectId.isValid(userId)
       ? { $or: [{ _id: new ObjectId(userId) }, { id: userId }] }

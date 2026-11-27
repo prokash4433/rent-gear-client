@@ -12,16 +12,22 @@ import { NextResponse, type NextRequest } from "next/server"
 
 const SESSION_COOKIE = "better-auth.session_token"
 
-/** Pages that require a signed-in user (cookie-presence check only). */
-const PRIVATE_PREFIXES = ["/browse-equipments", "/dashboard"]
+/**
+ * Signed-out visitors are bounced off these before anything renders:
+ * - every `/dashboard*` page (role scoping happens in the layouts);
+ * - the equipment *details* page (`/browse-equipments/[id]`) — the list
+ *   itself (`/browse-equipments`) is public and needs no cookie.
+ */
+function isPrivatePath(pathname: string): boolean {
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) return true
+  if (pathname.startsWith("/browse-equipments/")) return true
+  return false
+}
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const isPrivate = PRIVATE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  )
-  if (!isPrivate) return NextResponse.next()
+  if (!isPrivatePath(pathname)) return NextResponse.next()
 
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value)
   if (hasSession) return NextResponse.next()

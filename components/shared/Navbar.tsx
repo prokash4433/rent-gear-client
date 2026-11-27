@@ -117,7 +117,6 @@ export function Navbar() {
   const navLinks: NavLink[] = [
     { label: "Home", href: "/" },
     { label: "All Equipment", href: "/browse-equipments" },
-    { label: "About Us", href: "/about" },
     { label: "Contact Us", href: "/contact" },
     { label: "How It Works", href: "/ItWorks" },
     { label: "Dashboard", href: `/dashboard/${session?.user.role || "customer"}` },

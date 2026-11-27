@@ -2,12 +2,11 @@ import { apiFetch } from "@/lib/api-client"
 import type { EquipmentDocument, EquipmentListItem, RawEquipment } from "@/lib/types"
 
 /**
- * Every call is authenticated (JWT) — see `lib/api-client.ts`.
- *
- * `token` is required when these helpers run on the server (pass
- * `await getServerAccessToken()`); in the browser it is resolved from the
- * session automatically. A failed/forbidden request resolves to an empty
- * list / null so a page never crashes.
+ * Reads from the Express API. `GET /equipments` is public (the All
+ * Equipment page works signed-out); pass `token` when a caller already has
+ * one — in the browser it is resolved from the session automatically.
+ * A failed/forbidden request resolves to an empty list / null so a page
+ * never crashes.
  */
 export const getEquipments = async (
   query = "",

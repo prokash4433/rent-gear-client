@@ -6,7 +6,16 @@ const client = new MongoClient(process.env.BETTER_AUTH_DB_URI as string);
 const db = client.db('rent-gear');
 
 export const auth = betterAuth({
-          
+          /**
+           * Origins allowed to call the auth API (CSRF origin check).
+           * better-auth always trusts `baseURL` (BETTER_AUTH_URL — the
+           * deployed site); these extras keep *local* development working
+           * when BETTER_AUTH_URL points at production.
+           */
+          trustedOrigins: [
+                    "http://localhost:3000",
+                    "http://127.0.0.1:3000",
+          ],
           emailAndPassword: {
                     enabled: true,
                     // The Sign Up form promises 6+ characters, so tell better-auth the same.

@@ -10,7 +10,22 @@ import { NextResponse, type NextRequest } from "next/server"
  * validates the session against the database before rendering any data.
  */
 
-const SESSION_COOKIE = "better-auth.session_token"
+/**
+ * better-auth's session cookie name in every form it may take:
+ * - `better-auth.session_token` — plain (local http dev);
+ * - `__Secure-...` — prefixed whenever the site is served over HTTPS
+ *   (production/Vercel), which is how better-auth names it there;
+ * - `__Host-...` — the stricter variant if it is ever enabled.
+ *
+ * Checking only the bare name made every deployed (HTTPS) visitor look
+ * signed out — the proxy then bounced valid sessions to /sign-in in an
+ * endless loop, even right after a successful login.
+ */
+const SESSION_COOKIES = [
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+  "__Host-better-auth.session_token",
+] as const
 
 /**
  * Signed-out visitors are bounced off these before anything renders:
@@ -29,7 +44,9 @@ export default function proxy(request: NextRequest) {
 
   if (!isPrivatePath(pathname)) return NextResponse.next()
 
-  const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value)
+  const hasSession = SESSION_COOKIES.some((name) =>
+    Boolean(request.cookies.get(name)?.value)
+  )
   if (hasSession) return NextResponse.next()
 
   const signInUrl = new URL("/sign-in", request.url)

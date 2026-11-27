@@ -13,6 +13,7 @@ import { GoogleButton } from "@/components/auth/GoogleButton"
 import type { FormErrors, SignInFormValues } from "@/lib/types"
 import { validateSignIn } from "@/lib/validation"
 import { authClient } from "@/lib/auth-client"
+import { dashboardPathFor } from "@/lib/role-paths"
 
 // Toast duration in milliseconds (default was 5000).
 const SUCCESS_TIMEOUT = 6000
@@ -34,13 +35,14 @@ export function SignInForm() {
   }
 
   // Where to go after signing in: the ?next= added by the route guard
-  // (open-redirect safe — only same-site paths are honoured), else home.
-  function nextDestination() {
+  // (open-redirect safe — only same-site paths are honoured), or null when
+  // the visitor came here on their own (they then get their dashboard).
+  function nextDestination(): string | null {
     const next = new URLSearchParams(window.location.search).get("next")
     if (next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\")) {
       return next
     }
-    return "/"
+    return null
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -79,8 +81,6 @@ export function SignInForm() {
         return
       }
 
-      console.log("Sign in form data:", data)
-
       toast.add({
         type: "success",
         title: "Sign in successful",
@@ -88,8 +88,10 @@ export function SignInForm() {
         timeout: SUCCESS_TIMEOUT,
       })
 
-      // Continue to the page that sent us here (or home).
-      router.push(nextDestination())
+      // Back to the page that sent us here (e.g. /dashboard/customer),
+      // otherwise straight to this user's own role dashboard.
+      router.push(nextDestination() ?? dashboardPathFor(data?.user?.role))
+      router.refresh()
     } catch {
       toast.add({
         type: "error",
@@ -106,7 +108,9 @@ export function SignInForm() {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: nextDestination(),
+        // Back to where the user wanted to go, else the /dashboard landing
+        // pad, which routes to the role's home for the new session.
+        callbackURL: nextDestination() ?? "/dashboard",
       })
 
       if (error) {

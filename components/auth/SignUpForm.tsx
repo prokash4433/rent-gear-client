@@ -15,6 +15,7 @@ import { FormField } from "@/components/auth/FormField"
 import { GoogleButton } from "@/components/auth/GoogleButton"
 import { authClient } from "@/lib/auth-client"
 import { uploadToImageBB } from "@/lib/imagebb"
+import { dashboardPathFor } from "@/lib/role-paths"
 import { cn } from "@/lib/utils"
 import type { FormErrors, SignUpFormValues, UserRole } from "@/lib/types"
 import { checkPassword, validateSignUp } from "@/lib/validation"
@@ -111,12 +112,14 @@ export function SignUpForm() {
     }
 
     // Send the whole form to better-auth, including the chosen role.
-    const { error } = await authClient.signUp.email({
+    // A successful sign-up also creates the session (the cookie is set on
+    // this response), so the new user is logged in immediately.
+    const { data, error } = await authClient.signUp.email({
       name: values.name as string,
       email: values.email,
       password: values.password,
       image: values.photo,
-      callbackURL: "/",
+      callbackURL: "/dashboard",
       role,
     })
 
@@ -135,15 +138,26 @@ export function SignUpForm() {
       description: "Welcome to Rent Gear!",
     })
 
-    router.push("/")
+    // Land the new user straight on their own dashboard (customer/owner —
+    // admins are never created through sign-up), no second login needed.
+    router.push(dashboardPathFor(data?.user?.role))
     router.refresh()
   }
 
   const handleGoogleSignIn = async () => {
-    const data = await authClient.signIn.social({
-      provider: 'google',
-    });
-    console.log(data)
+    // After OAuth, better-auth redirects to the callback URL — /dashboard
+    // then sends the user to their role's home based on the new session.
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/dashboard",
+    })
+    if (error) {
+      toast.add({
+        type: "error",
+        title: "Google sign up failed",
+        description: error.message || "Something went wrong. Please try again.",
+      })
+    }
   }
 
   // Live checklist for the three password rules.

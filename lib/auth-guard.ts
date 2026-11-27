@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { auth } from "@/lib/auth"
+import { ROLE_HOME } from "@/lib/role-paths"
 import type { UserRole } from "@/lib/types"
 
 /**
@@ -15,13 +16,6 @@ import type { UserRole } from "@/lib/types"
  * role-scoped dashboards. Both never return when access is denied: they
  * redirect (303) instead, so callers can simply `await` them at the top.
  */
-
-/** Home each role belongs to (wrong-role visitors are sent back here). */
-const ROLE_HOME: Record<UserRole, string> = {
-  customer: "/dashboard/customer",
-  owner: "/dashboard/owner",
-  admin: "/dashboard/admin",
-}
 
 /** Returns the better-auth session for this request, or null when signed out. */
 export async function getSession() {

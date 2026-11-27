@@ -14,7 +14,6 @@ import {
   Check,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useSession } from "@/lib/auth-client"
 import { UserAvatar } from "./User-Avatar"
 import {
@@ -96,9 +95,6 @@ export function DashboardTopbar() {
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/95 px-4 backdrop-blur-sm sm:px-6">
-      {/* Mobile sidebar toggle button */}
-      <SidebarTrigger className="md:hidden" />
-
       {/* Equipment Search Input */}
       <form action="/browse-equipments" className="relative w-full max-w-sm" role="search">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

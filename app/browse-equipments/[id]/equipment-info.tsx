@@ -31,6 +31,12 @@ type EquipmentInfoProps = {
           equipment: EquipmentDocument
           /** The signed-in viewer, used to save/unsave the favourite. */
           userEmail: string
+          /**
+           * The signed-in viewer's role. Listings created before
+           * `ownerEmail` existed carry no owner at all — when an *owner* views one, their own email is shown instead of
+           * "Unknown owner".
+           */
+          viewerRole?: string
 }
 
 /** One label + value block in the specs grid. */
@@ -43,11 +49,22 @@ function Spec({ label, value }: { label: string; value: string }) {
           )
 }
 
-export function EquipmentInfo({ equipment, userEmail }: EquipmentInfoProps) {
+export function EquipmentInfo({ equipment, userEmail, viewerRole }: EquipmentInfoProps) {
           const id = String(equipment._id)
           const image = firstImageFrom(equipment.imageUrls)
           const quantity = Number(equipment.quantity) || 0
           const available = quantity > 0
+
+          // Who listed this: the stored owner email first (the requirement
+          // is to show the email, not a display name); legacy documents
+          // carry no owner at all, so a logged-in owner sees their own
+          // email rather than the old "Unknown owner" fallback.
+          const ownerName = (equipment as { ownerName?: string }).ownerName
+          const listedBy =
+                    equipment.ownerEmail ||
+                    (viewerRole === "owner" && userEmail ? userEmail : "") ||
+                    ownerName ||
+                    "Unknown owner"
 
           const [isFavourite, setIsFavourite] = useState(false)
           const [busy, setBusy] = useState(false)
@@ -231,10 +248,7 @@ export function EquipmentInfo({ equipment, userEmail }: EquipmentInfoProps) {
                                                                       Listed by
                                                             </p>
                                                             <p className="truncate text-sm font-medium">
-                                                                      {(equipment as { ownerName?: string })
-                                                                                .ownerName ||
-                                                                      equipment.ownerEmail ||
-                                                                      "Unknown owner"}
+                                                                      {listedBy}
                                                             </p>
                                                   </div>
                                         </div>

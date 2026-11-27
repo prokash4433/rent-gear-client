@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 
 import { requireSession } from "@/lib/auth-guard"
 import { DashboardSidebar } from "../_components/DashboardSidebar"
@@ -25,8 +25,6 @@ const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
           
         <DashboardSidebar />
           <main className="flex-1 min-w-0">
-          <SidebarTrigger />
-                     
         <DashboardTopbar />
           {children}
           </main>

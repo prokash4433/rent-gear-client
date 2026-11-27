@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
-import { CalendarRange, Loader2, ShieldCheck } from "lucide-react"
+import { CalendarRange, Loader2, Mail, ShieldCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +24,8 @@ type BookingCardProps = {
           equipment: EquipmentDocument
           /** True when Stripe checkout was cancelled (?cancelled=1). */
           cancelled: boolean
+          /** The signed-in user's email — shown in Contact Information. */
+          userEmail: string
 }
 
 /** Form state: every value is a string, exactly like the inputs hold it. */
@@ -45,7 +47,7 @@ const initialValues: BookingValues = {
           notes: "",
 }
 
-export function BookingCard({ equipment, cancelled }: BookingCardProps) {
+export function BookingCard({ equipment, cancelled, userEmail }: BookingCardProps) {
           const [values, setValues] = useState<BookingValues>(initialValues)
           const [submitting, setSubmitting] = useState(false)
           // Blocks a second click while the first request is on its way.
@@ -236,41 +238,66 @@ export function BookingCard({ equipment, cancelled }: BookingCardProps) {
                                                             </p>
                                                   </div>
 
-                                                  {/* ---------- Contact ---------- */}
-                                                  <div className="flex flex-col gap-1.5">
-                                                            <Label htmlFor="booking-contact">
-                                                                      Contact Number <span className="text-destructive">*</span>
-                                                            </Label>
-                                                            <Input
-                                                                      id="booking-contact"
-                                                                      type="tel"
-                                                                      placeholder="01XXXXXXXXX"
-                                                                      value={values.contactNumber}
-                                                                      onChange={(event) =>
-                                                                                setField(
-                                                                                          "contactNumber",
-                                                                                          event.target.value
-                                                                                )
-                                                                      }
-                                                            />
-                                                  </div>
+                                                  {/* ---------- Contact Information ---------- */}
+                                                  <div className="flex flex-col gap-3 rounded-xl border bg-muted/40 p-3">
+                                                            <p className="flex items-center gap-1.5 text-sm font-semibold">
+                                                                      <Mail className="size-4 text-brand-hover" />
+                                                                      Contact Information
+                                                            </p>
 
-                                                  <div className="flex flex-col gap-1.5">
-                                                            <Label htmlFor="booking-address">
-                                                                      Delivery Address <span className="text-destructive">*</span>
-                                                            </Label>
-                                                            <Textarea
-                                                                      id="booking-address"
-                                                                      rows={2}
-                                                                      placeholder="House, road, area, city"
-                                                                      value={values.deliveryAddress}
-                                                                      onChange={(event) =>
-                                                                                setField(
-                                                                                          "deliveryAddress",
-                                                                                          event.target.value
-                                                                                )
-                                                                      }
-                                                            />
+                                                            {/* Signed-in user's email, shown automatically. */}
+                                                            <div className="flex flex-col gap-1.5">
+                                                                      <Label htmlFor="booking-email">
+                                                                                Email
+                                                                      </Label>
+                                                                      <Input
+                                                                                id="booking-email"
+                                                                                type="email"
+                                                                                value={userEmail}
+                                                                                readOnly
+                                                                                aria-readonly
+                                                                                className="text-muted-foreground"
+                                                                      />
+                                                                      <p className="text-xs text-muted-foreground">
+                                                                                From your account — booking confirmations are sent here.
+                                                                      </p>
+                                                            </div>
+
+                                                            <div className="flex flex-col gap-1.5">
+                                                                      <Label htmlFor="booking-contact">
+                                                                                Contact Number <span className="text-destructive">*</span>
+                                                                      </Label>
+                                                                      <Input
+                                                                                id="booking-contact"
+                                                                                type="tel"
+                                                                                placeholder="01XXXXXXXXX"
+                                                                                value={values.contactNumber}
+                                                                                onChange={(event) =>
+                                                                                          setField(
+                                                                                                    "contactNumber",
+                                                                                                    event.target.value
+                                                                                          )
+                                                                                }
+                                                                      />
+                                                            </div>
+
+                                                            <div className="flex flex-col gap-1.5">
+                                                                      <Label htmlFor="booking-address">
+                                                                                Delivery Address <span className="text-destructive">*</span>
+                                                                      </Label>
+                                                                      <Textarea
+                                                                                id="booking-address"
+                                                                                rows={2}
+                                                                                placeholder="House, road, area, city"
+                                                                                value={values.deliveryAddress}
+                                                                                onChange={(event) =>
+                                                                                          setField(
+                                                                                                    "deliveryAddress",
+                                                                                                    event.target.value
+                                                                                          )
+                                                                                }
+                                                                      />
+                                                            </div>
                                                   </div>
 
                                                   <div className="flex flex-col gap-1.5">

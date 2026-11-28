@@ -76,9 +76,6 @@ const EquipmentDetailsPage = async ({
                                                   <EquipmentInfo
                                                             equipment={equipment}
                                                             userEmail={session.user.email}
-                                                            viewerRole={String(
-                                                                      session.user.role ?? "customer"
-                                                            )}
                                                   />
                                         </div>
 

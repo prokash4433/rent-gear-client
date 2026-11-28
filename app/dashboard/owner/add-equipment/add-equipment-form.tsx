@@ -1,10 +1,10 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { DragEvent, FormEvent, ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, ImagePlus, Truck, Upload, X } from "lucide-react"
+import { ArrowLeft, Check, ImagePlus, Truck, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,6 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/toast"
 import { createEquipment } from "@/lib/actions/equipments"
+import { uploadToImageBB } from "@/lib/imagebb"
 import type {
   CategoryOption,
   EquipmentFormValues,
@@ -50,6 +51,23 @@ const conditions = ["Excellent", "Good", "Fair"]
 
 /** How many photos one listing may have. */
 const maxPhotos = 6
+
+/**
+ * One photo picked from the device. The file is uploaded to ImgBB as soon as
+ * it is added, so the listing can store a real, hostable image URL — the
+ * browser never sends the file itself to our own server.
+ */
+type EquipmentPhoto = {
+  id: string
+  file: File
+  /** Local `blob:` preview shown in the chip while the upload runs. */
+  preview: string
+  status: "uploading" | "done" | "error"
+  /** Public ImgBB URL once the upload finished. */
+  url?: string
+  /** User-facing reason when the upload failed. */
+  error?: string
+}
 
 /** Jekhane publish-er por niye jabe. */
 const myEquipmentPath = "/dashboard/owner/my-equipment"
@@ -100,8 +118,9 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
   const router = useRouter()
   const [values, setValues] = useState<EquipmentFormValues>(initialValues)
   const [errors, setErrors] = useState<FormErrors<EquipmentFormValues>>({})
-  // The photos picked from the device (kept as File objects).
-  const [photos, setPhotos] = useState<File[]>([])
+  // The photos picked from the device, each already (or being) uploaded to
+  // ImgBB — only the resulting public URLs are saved with the listing.
+  const [photos, setPhotos] = useState<EquipmentPhoto[]>([])
   // True while the form data is being sent to the API.
   const [saving, setSaving] = useState(false)
   // The ref updates instantly (state only updates after a re-render),
@@ -109,16 +128,81 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
   const savingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Live copy of the photos for the unmount cleanup below.
+  const photosRef = useRef<EquipmentPhoto[]>([])
+  photosRef.current = photos
+
+  // Release the local previews when the form goes away.
+  useEffect(
+    () => () => {
+      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.preview))
+    },
+    []
+  )
+
+  const uploadingCount = photos.filter(
+    (photo) => photo.status === "uploading"
+  ).length
+
   // Update one field and clear its error while the user types.
   function setField(field: keyof EquipmentFormValues, value: string) {
     setValues({ ...values, [field]: value })
     setErrors({ ...errors, [field]: undefined })
   }
 
+  // Uploads one photo to ImgBB and records the public URL on its entry.
+  async function uploadPhoto(entry: EquipmentPhoto) {
+    try {
+      const url = await uploadToImageBB(entry.file)
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          photo.id === entry.id ? { ...photo, status: "done", url } : photo
+        )
+      )
+    } catch (error) {
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          photo.id === entry.id
+            ? {
+                ...photo,
+                status: "error",
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Upload failed. Please try again.",
+              }
+            : photo
+        )
+      )
+    }
+  }
+
   // Keep at most 6 photos, whether they come from the picker or the drop zone.
+  // Every new photo starts uploading to ImgBB straight away.
   function addPhotos(list: FileList | null) {
     if (!list) return
-    setPhotos([...photos, ...Array.from(list)].slice(0, maxPhotos))
+
+    const room = maxPhotos - photos.length
+    if (room <= 0) {
+      toast.add({
+        type: "error",
+        title: "Photo limit reached",
+        description: `A listing can have up to ${maxPhotos} photos.`,
+      })
+      return
+    }
+
+    const entries: EquipmentPhoto[] = Array.from(list)
+      .slice(0, room)
+      .map((file, index) => ({
+        id: `${Date.now()}-${index}-${file.name}`,
+        file,
+        preview: URL.createObjectURL(file),
+        status: "uploading" as const,
+      }))
+
+    setPhotos((prev) => [...prev, ...entries])
+    entries.forEach((entry) => void uploadPhoto(entry))
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
@@ -127,7 +211,11 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
   }
 
   function removePhoto(index: number) {
-    setPhotos(photos.filter((_, i) => i !== index))
+    setPhotos((prev) => {
+      const target = prev[index]
+      if (target) URL.revokeObjectURL(target.preview)
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -149,15 +237,43 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
       return
     }
 
+    // Photos upload in the background while the owner keeps editing —
+    // the listing can only be published once every upload has finished.
+    if (uploadingCount > 0) {
+      toast.add({
+        type: "error",
+        title: "Photos are still uploading",
+        description: "Hang on a moment for the uploads to finish, then publish again.",
+      })
+      return
+    }
+
+    const failedPhoto = photos.find((photo) => photo.status === "error")
+    if (failedPhoto) {
+      toast.add({
+        type: "error",
+        title: "Some photos failed to upload",
+        description: `Remove "${failedPhoto.file.name}" or add it again, then publish once more.`,
+      })
+      return
+    }
+
     // One object with everything the form collected.
     const equipment: EquipmentPayload = {
       ...values,
-      // The textarea holds one URL per line -> turn it into an array.
-      imageUrls: values.imageUrls
-        .split("\n")
-        .map((url) => url.trim())
-        .filter(Boolean),
-      photos: photos.map((photo) => photo.name),
+      // The textarea holds one URL per line -> turn it into an array, and
+      // append the ImgBB URLs of the picked photos (that is what makes the
+      // images show up on My Equipment, the details page and the cards).
+      imageUrls: [
+        ...values.imageUrls
+          .split("\n")
+          .map((url) => url.trim())
+          .filter(Boolean),
+        ...photos
+          .map((photo) => photo.url)
+          .filter((url): url is string => Boolean(url)),
+      ],
+      photos: photos.map((photo) => photo.file.name),
       // Record who listed it, so My Equipment and the owner queries can
       // filter by owner. Comes from the server session, not client state.
       ownerEmail,
@@ -178,6 +294,7 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
 
       // Start fresh so the same listing cannot be published again.
       setValues(initialValues)
+      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.preview))
       setPhotos([])
 
       // Notun data jate sathe sathe dekha jay:
@@ -467,18 +584,47 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
                 onChange={(event) => addPhotos(event.target.files)}
               />
 
-              {/* Names of the picked photos, with a remove button each */}
+              {/* Thumbnails of the picked photos: live upload status + remove */}
               {photos.length > 0 && (
                 <ul className="flex flex-wrap gap-2">
                   {photos.map((photo, index) => (
                     <li
-                      key={`${photo.name}-${index}`}
-                      className="flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 text-xs"
+                      key={photo.id}
+                      className={`flex items-center gap-2 rounded-lg border bg-background py-1 pl-1 pr-2 text-xs ${
+                        photo.status === "error"
+                          ? "border-destructive/60"
+                          : "border-border/70"
+                      }`}
                     >
-                      {photo.name}
+                      {/* Local preview — a plain img, the blob URL is ours. */}
+                      <img
+                        src={photo.preview}
+                        alt=""
+                        className="size-8 shrink-0 rounded-md object-cover"
+                      />
+                      <span className="max-w-40 truncate" title={photo.file.name}>
+                        {photo.file.name}
+                      </span>
+                      {photo.status === "uploading" && (
+                        <span className="text-muted-foreground">Uploading…</span>
+                      )}
+                      {photo.status === "done" && (
+                        <Check
+                          className="size-3.5 shrink-0 text-emerald-600"
+                          aria-label="Uploaded"
+                        />
+                      )}
+                      {photo.status === "error" && (
+                        <span
+                          className="text-destructive"
+                          title={photo.error ?? "Upload failed"}
+                        >
+                          Failed
+                        </span>
+                      )}
                       <button
                         type="button"
-                        aria-label={`Remove ${photo.name}`}
+                        aria-label={`Remove ${photo.file.name}`}
                         onClick={() => removePhoto(index)}
                         className="rounded-full text-muted-foreground hover:text-destructive"
                       >
@@ -529,10 +675,16 @@ export default function AddEquipmentForm({ ownerEmail }: { ownerEmail: string })
               </Button>
               <Button
                 type="submit"
-                disabled={saving}
+                disabled={saving || uploadingCount > 0}
                 className="cursor-pointer bg-brand text-neutral-900 hover:bg-brand-hover dark:bg-brand dark:text-neutral-900 dark:hover:bg-brand-hover"
               >
-                {saving ? "Publishing..." : "Publish Equipment"}
+                {uploadingCount > 0
+                  ? `Uploading ${uploadingCount} photo${
+                      uploadingCount > 1 ? "s" : ""
+                    }…`
+                  : saving
+                    ? "Publishing..."
+                    : "Publish Equipment"}
               </Button>
             </div>
           </form>
